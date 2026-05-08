@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>光子招聘 · 新人进阶手册 🚀</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
 :root {
@@ -453,20 +454,92 @@ const STATUSES = ['待触达','已触达','沟通中','已推荐','面试中','�
 const CHANNELS = ['Boss直聘','猎聘','LinkedIn','脉脉','ArtStation','内部简历库','校园渠道','其他'];
 
 // ============================================
-// DATA LAYER
+// SUPABASE CONFIG
+// ============================================
+const SUPABASE_URL = 'https://qubjivmscdvksioepzem.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Ymppdm1zY2R2a3Npb2VwemVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNDYxOTQsImV4cCI6MjA5MzgyMjE5NH0.ZT8HdpRqlAnFl08Qn92Z-VpROHBqM9PF15D4pJ38KAY';
+let supabase = null;
+let supabaseReady = false;
+
+// Initialize Supabase
+try {
+  if (window.supabase && window.supabase.createClient) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseReady = true;
+    console.log('[Supabase] Connected');
+  }
+} catch(e) { console.warn('[Supabase] Init failed, using localStorage only:', e); }
+
+// ============================================
+// DATA LAYER (localStorage + Supabase sync)
 // ============================================
 function loadData(key, fallback) { try { return JSON.parse(localStorage.getItem('phub_' + key)) || fallback; } catch(e) { return fallback; } }
-function saveData(key, data) { localStorage.setItem('phub_' + key, JSON.stringify(data)); }
+function saveData(key, data) { localStorage.setItem('phub_' + key, JSON.stringify(data)); syncToCloud(key, data); }
 function getUsers() { return loadData('users', []); }
 function saveUsers(users) { saveData('users', users); }
 function getAdminCode() { return localStorage.getItem('phub_admin_code') || ''; }
-function setAdminCodeValue(code) { localStorage.setItem('phub_admin_code', code); }
+function setAdminCodeValue(code) { localStorage.setItem('phub_admin_code', code); if(supabaseReady) supabase.from('config').upsert({key:'admin_code',value:code}); }
 function getReviewData(userId) { return loadData('reviews_' + userId, {}); }
 function saveReviewData(userId, data) { saveData('reviews_' + userId, data); }
 function getTrackData(userId) { return loadData('track_' + userId, []); }
 function saveTrackData(userId, data) { saveData('track_' + userId, data); }
 function getPlanData(userId) { return loadData('plan_' + userId, null); }
 function savePlanData(userId, data) { saveData('plan_' + userId, data); }
+
+// Cloud sync (non-blocking background)
+async function syncToCloud(key, data) {
+  if (!supabaseReady) return;
+  try {
+    if (key === 'users') {
+      // Sync users table
+      await supabase.from('users').delete().neq('id', '___');
+      const rows = data.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project||'', mentor_id: u.mentorId||'' }));
+      if (rows.length) await supabase.from('users').upsert(rows);
+    } else if (key.startsWith('track_')) {
+      const userId = key.replace('track_', '');
+      await supabase.from('candidates').delete().eq('user_id', userId);
+      const rows = data.map(c => ({ id: c._id, user_id: userId, name: c['姓名']||'', project: c['项目']||'', position: c['岗位']||'', company: c['公司']||'', channel: c['渠道']||'', status: c['状态']||'', recommend_date: c['推荐日期']||'', resume_link: c['简历链接']||'', comments: c['Comments']||'' }));
+      if (rows.length) await supabase.from('candidates').upsert(rows);
+    } else if (key.startsWith('reviews_')) {
+      const userId = key.replace('reviews_', '');
+      await supabase.from('reviews').upsert({ user_id: userId, review_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    } else if (key.startsWith('plan_')) {
+      const userId = key.replace('plan_', '');
+      await supabase.from('plans').upsert({ user_id: userId, plan_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    }
+  } catch(e) { console.warn('[Supabase] Sync error:', e); }
+}
+
+// Pull from cloud on first load (if localStorage empty)
+async function pullFromCloud() {
+  if (!supabaseReady) return;
+  try {
+    // Pull users
+    const { data: cloudUsers } = await supabase.from('users').select('*');
+    if (cloudUsers && cloudUsers.length > 0 && getUsers().length === 0) {
+      const users = cloudUsers.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project, mentorId: u.mentor_id }));
+      localStorage.setItem('phub_users', JSON.stringify(users));
+      // Pull each user's data
+      for (const u of users) {
+        const { data: reviews } = await supabase.from('reviews').select('review_data').eq('user_id', u.id).single();
+        if (reviews) localStorage.setItem('phub_reviews_' + u.id, JSON.stringify(reviews.review_data));
+        const { data: plan } = await supabase.from('plans').select('plan_data').eq('user_id', u.id).single();
+        if (plan) localStorage.setItem('phub_plan_' + u.id, JSON.stringify(plan.plan_data));
+        const { data: candidates } = await supabase.from('candidates').select('*').eq('user_id', u.id);
+        if (candidates && candidates.length) {
+          const track = candidates.map(c => ({ _id: c.id, '姓名': c.name, '项目': c.project, '岗位': c.position, '公司': c.company, '渠道': c.channel, '状态': c.status, '推荐日期': c.recommend_date, '简历链接': c.resume_link, 'Comments': c.comments }));
+          localStorage.setItem('phub_track_' + u.id, JSON.stringify(track));
+        }
+      }
+      // Pull admin code
+      const { data: cfg } = await supabase.from('config').select('value').eq('key', 'admin_code').single();
+      if (cfg) localStorage.setItem('phub_admin_code', cfg.value);
+      console.log('[Supabase] Data pulled from cloud');
+      return true; // indicate data was pulled
+    }
+  } catch(e) { console.warn('[Supabase] Pull error:', e); }
+  return false;
+}
 
 let currentUserId = null;
 let adminVerified = false; // session-level admin verification
@@ -499,7 +572,9 @@ function canEditData(userId) {
 // ============================================
 // INIT
 // ============================================
-function init() {
+async function init() {
+  // Try to pull from cloud if local is empty
+  await pullFromCloud();
   const users = getUsers();
   if (users.length === 0) { firstTimeSetup(); return; }
   // Check if user is logged in
