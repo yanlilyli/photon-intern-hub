@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>光子招聘 · 新人进阶手册 🚀</title>
+<script>
+// IMMEDIATE: fix broken state before anything else loads
+(function(){
+  if(window.location.search.includes('reset=1')){
+    for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.startsWith('phub_'))localStorage.removeItem(k);}
+    localStorage.removeItem('phub_current_user');
+    localStorage.removeItem('phub_admin_code');
+    window.history.replaceState({},'',window.location.pathname);
+  }
+  // If we have a saved user but no users list, clear it
+  var saved=localStorage.getItem('phub_current_user');
+  var users=null;
+  try{users=JSON.parse(localStorage.getItem('phub_users'));}catch(e){}
+  if(saved && (!users || !users.length || !users.find(function(u){return u.id===saved;}))){
+    localStorage.removeItem('phub_current_user');
+  }
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
