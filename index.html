@@ -573,6 +573,13 @@ function canEditData(userId) {
 // INIT
 // ============================================
 async function init() {
+  // Force reset via URL param ?reset=1
+  if (window.location.search.includes('reset=1')) {
+    Object.keys(localStorage).forEach(k => { if(k.startsWith('phub_')) localStorage.removeItem(k); });
+    localStorage.removeItem('phub_current_user');
+    localStorage.removeItem('phub_admin_code');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
   // Try to pull from cloud if local is empty
   await pullFromCloud();
   const users = getUsers();
@@ -581,7 +588,7 @@ async function init() {
   const savedId = localStorage.getItem('phub_current_user');
   if (savedId && getUserById(savedId)) {
     currentUserId = savedId;
-    if (getCurrentUser().role === 'leader') adminVerified = true;
+    if (getCurrentUser() && getCurrentUser().role === 'leader') adminVerified = true;
     renderApp();
   } else {
     // Clear stale session and show login
@@ -602,6 +609,13 @@ function firstTimeSetup() {
 }
 
 function renderApp() {
+  // Safety check: if current user doesn't exist, force re-login
+  if (!getCurrentUser()) {
+    localStorage.removeItem('phub_current_user');
+    currentUserId = null;
+    showLoginModal();
+    return;
+  }
   renderUserDisplay();
   renderTabs();
   updateUserMetaDisplay();
