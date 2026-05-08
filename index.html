@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer鹅 · 光子实习Hub 🐧</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+:root {
+  --primary: #6366F1;
+  --primary-light: #818CF8;
+  --primary-dark: #4F46E5;
+  --accent: #F59E0B;
+  --pink: #EC4899;
+  --green: #10B981;
+  --bg: #FAFBFF;
+  --card: #FFFFFF;
+  --border: #E5E7EB;
+  --text: #1F2937;
+  --text-light: #6B7280;
+  --success: #10B981;
+  --danger: #EF4444;
+  --tag-basic: #EDE9FE;
+  --tag-advanced: #FEF3C7;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.header { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 100%); color: white; padding: 40px 30px 20px; border-radius: 20px; margin-bottom: 24px; position: relative; overflow: hidden; }
+.header::before { content: ''; position: absolute; top: -30px; right: -30px; width: 200px; height: 200px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='10' y='80' font-size='70'%3E🐧%3C/text%3E%3C/svg%3E") no-repeat center; background-size: contain; opacity: 0.15; }
+.header h1 { font-size: 28px; margin-bottom: 6px; position: relative; }
+.header .subtitle { opacity: 0.9; font-size: 14px; position: relative; }
+.header .offer-badge { display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.3); position: relative; }
+.identity-bar { background: rgba(255,255,255,0.12); backdrop-filter: blur(8px); border-radius: 12px; padding: 12px 16px; margin-top: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; border: 1px solid rgba(255,255,255,0.15); }
+.identity-bar label { font-size: 13px; font-weight: 600; }
+.identity-bar select { padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; font-size: 13px; font-weight: 500; cursor: pointer; outline: none; }
+.identity-bar select option { color: var(--text); background: white; }
+.identity-bar .user-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.identity-bar .user-meta span { background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 16px; font-size: 12px; }
+.tab-nav { display: flex; gap: 4px; background: var(--card); padding: 6px; border-radius: 14px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(99,102,241,0.08); overflow-x: auto; border: 1px solid rgba(99,102,241,0.1); }
+.tab-btn { padding: 10px 16px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-light); white-space: nowrap; transition: all 0.2s; }
+.tab-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+.tab-btn:hover:not(.active) { background: #F5F3FF; color: var(--primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.card { background: var(--card); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); }
+.card h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card h3 { font-size: 15px; color: var(--primary); margin: 16px 0 10px; }
+.link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.link-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); transition: all 0.2s; text-decoration: none; color: var(--text); }
+.link-item:hover { border-color: var(--primary); background: #F5F3FF; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.1); }
+.link-item .icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.link-item .info { flex: 1; }
+.link-item .info .name { font-weight: 500; font-size: 14px; }
+.link-item .info .desc { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.tag-basic { background: var(--tag-basic); color: #5B21B6; }
+.tag-advanced { background: var(--tag-advanced); color: #92400E; }
+.note-box { background: #F5F3FF; border-left: 4px solid var(--primary); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 12px 0; font-size: 13px; }
+.danger-box { background: #FEF2F2; border-left: 4px solid var(--danger); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 12px 0; font-size: 13px; }
+.intern-card { background: var(--card); border-radius: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); overflow: hidden; }
+.intern-card:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
+.intern-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; cursor: pointer; user-select: none; background: #FAFBFF; }
+.intern-card-header:hover { background: #F5F3FF; }
+.intern-card-header .left { display: flex; align-items: center; gap: 12px; }
+.intern-card-header .avatar { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--pink)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+.intern-card-header .info-block .intern-name { font-weight: 600; font-size: 15px; }
+.intern-card-header .info-block .intern-meta { font-size: 12px; color: var(--text-light); }
+.intern-card-header .quick-stats { display: flex; gap: 12px; }
+.intern-card-header .quick-stat { text-align: center; padding: 4px 10px; background: rgba(99,102,241,0.06); border-radius: 8px; }
+.intern-card-header .quick-stat .qs-num { font-size: 16px; font-weight: 700; color: var(--primary); }
+.intern-card-header .quick-stat .qs-label { font-size: 10px; color: var(--text-light); }
+.intern-card-header .arrow { font-size: 12px; color: var(--text-light); transition: transform 0.2s; }
+.intern-card.open .intern-card-header .arrow { transform: rotate(90deg); }
+.intern-card-body { display: none; padding: 0 20px 20px; }
+.intern-card.open .intern-card-body { display: block; }
+.sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.sub-tab-btn { padding: 8px 14px; border: 1px solid var(--border); background: white; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text-light); transition: all 0.2s; }
+.sub-tab-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-color: transparent; }
+.sub-tab-content { display: none; }
+.sub-tab-content.active { display: block; }
+.review-stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; margin-bottom: 12px; }
+.review-stats-row .stat-item label { margin-bottom: 3px; font-size: 11px; display: block; color: var(--text-light); font-weight: 600; }
+.review-stats-row .stat-item input { width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+.review-field { margin-bottom: 12px; }
+.review-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 4px; }
+.review-field textarea { width: 100%; min-height: 55px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; }
+.review-field textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.week-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.week-pill { padding: 4px 10px; border: 1px solid var(--border); border-radius: 16px; cursor: pointer; font-size: 11px; color: var(--text-light); background: white; transition: all 0.15s; }
+.week-pill:hover { border-color: var(--primary); color: var(--primary); }
+.week-pill.active { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-color: transparent; }
+.candidate-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; transition: all 0.2s; }
+.candidate-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(99,102,241,0.08); }
+.candidate-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.candidate-row .c-field { display: flex; flex-direction: column; gap: 2px; }
+.candidate-row .c-field label { font-size: 10px; color: var(--text-light); font-weight: 600; }
+.candidate-row .c-field input, .candidate-row .c-field select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; }
+.candidate-row .c-field input:focus, .candidate-row .c-field select:focus { outline: none; border-color: var(--primary); }
+.candidate-row .c-actions { margin-left: auto; }
+.plan-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+.plan-card .plan-week { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.plan-card .plan-goal { font-size: 13px; color: var(--primary-dark); margin-bottom: 4px; }
+.plan-card .plan-tasks { font-size: 12px; color: var(--text-light); line-height: 1.8; }
+.plan-card .plan-output { font-size: 12px; margin-top: 6px; }
+.plan-card .plan-output span { background: #D1FAE5; color: #065F46; padding: 1px 8px; border-radius: 4px; font-size: 11px; }
+.stats-card { background: linear-gradient(135deg, #F5F3FF, #FDF4FF); border: 1px solid rgba(99,102,241,0.15); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.stat-box { background: white; border-radius: 10px; padding: 12px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.stat-box .num { font-size: 24px; font-weight: 700; color: var(--primary); }
+.stat-box .label { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.summary-card { background: linear-gradient(135deg, #F5F3FF, #FDF4FF); border: 1px solid rgba(99,102,241,0.12); border-radius: 10px; padding: 12px; font-size: 12px; }
+.summary-card .sc-name { font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--primary-dark); }
+.dash-stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.dash-stat { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); }
+.dash-stat .ds-num { font-size: 28px; font-weight: 700; }
+.dash-stat .ds-label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.chart-card { background: white; border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+.chart-card h3 { font-size: 15px; color: var(--primary); margin-bottom: 12px; }
+.btn-primary { background: linear-gradient(135deg, var(--primary), #8B5CF6); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+.btn-success { background: var(--green); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.btn-danger { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--danger); }
+.btn-outline { background: white; border: 1px solid var(--border); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; color: var(--text-light); transition: all 0.2s; }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.plan-editor { background: #FAFBFF; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.plan-editor .pe-row { display: grid; grid-template-columns: 120px 80px 1fr 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start; }
+.plan-editor .pe-row input, .plan-editor .pe-row textarea { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; }
+.plan-editor .pe-row textarea { min-height: 50px; resize: vertical; }
+.plan-editor .pe-header { display: grid; grid-template-columns: 120px 80px 1fr 1fr 1fr auto; gap: 8px; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: var(--text-light); }
+.user-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; background: white; }
+.user-list-item .avatar-sm { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: white; }
+.user-list-item .user-info { flex: 1; }
+.user-list-item .user-info .uname { font-weight: 600; font-size: 14px; }
+.user-list-item .user-info .umeta { font-size: 11px; color: var(--text-light); }
+.role-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.role-leader { background: #FCE7F3; color: #BE185D; }
+.role-mentor { background: #EDE9FE; color: #5B21B6; }
+.role-intern { background: #D1FAE5; color: #065F46; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay.show { display: flex; }
+.modal { background: white; border-radius: 16px; padding: 28px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.modal .form-group { margin-bottom: 14px; }
+.modal .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 4px; }
+.modal .form-group input, .modal .form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; }
+.modal .form-group input:focus, .modal .form-group select:focus { outline: none; border-color: var(--primary); }
+.modal .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.save-bar { position: fixed; bottom: 20px; right: 20px; z-index: 100; }
+.save-btn { background: linear-gradient(135deg, var(--primary), #8B5CF6); color: white; border: none; padding: 12px 24px; border-radius: 25px; font-size: 14px; font-weight: 500; cursor: pointer; box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+.save-notice { position: fixed; top: 20px; right: 20px; background: var(--success); color: white; padding: 10px 20px; border-radius: 10px; font-size: 14px; display: none; z-index: 200; }
+.faq-item { padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
+.faq-item .q { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--primary-dark); }
+.faq-item .a { font-size: 13px; color: var(--text-light); }
+.admin-code-section { background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header { padding: 24px 20px 16px; }
+  .header h1 { font-size: 22px; }
+  .link-grid { grid-template-columns: 1fr; }
+  .tab-nav { gap: 2px; padding: 4px; }
+  .tab-btn { padding: 8px 10px; font-size: 12px; }
+  .identity-bar { flex-direction: column; align-items: flex-start; }
+  .chart-row { grid-template-columns: 1fr; }
+  .intern-card-header .quick-stats { display: none; }
+  .plan-editor .pe-row { grid-template-columns: 1fr; }
+  .plan-editor .pe-header { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🐧 Offer鹅 · 光子实习Hub</h1>
+    <p class="subtitle">光子招聘团队实习管理平台 · 让offer鹅主动来敲门～</p>
+    <span class="offer-badge">🐧 多人协作版 · 动态角色管理</span>
+    <div class="identity-bar">
+      <label>当前身份：</label>
+      <select id="user-selector" onchange="switchUser(this.value)"></select>
+      <div class="user-meta" id="user-meta-display"></div>
+    </div>
+  </div>
+
+  <div class="tab-nav" id="main-tabs"></div>
+
+  <!-- Tab: 学习资料 -->
+  <div id="tab-learn" class="tab-content">
+    <div class="card">
+      <h2>🔥 行业动态渠道（日常关注）</h2>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">每天花15分钟浏览，保持对行业的敏感度</p>
+      <div class="link-grid">
+        <div class="link-item" style="cursor:default"><div class="icon" style="background:#FEF3C7">📱</div><div class="info"><div class="name">公众号推荐</div><div class="desc">游戏葡萄、游戏茶馆、腾讯游戏学堂、竞核、GameRes游资网、游戏研究社</div></div><span class="tag tag-basic">必关注</span></div>
+        <div class="link-item" style="cursor:default"><div class="icon" style="background:#EDE9FE">📲</div><div class="info"><div class="name">App推荐</div><div class="desc">TapTap、机核、小黑盒、Steam Mobile、七麦数据</div></div><span class="tag tag-basic">必关注</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📖 游戏行业知识入门</h2>
+      <div class="note-box">⚠️ 标记为 <span class="tag tag-advanced">内网</span> 的链接需要连接<b>公司VPN/内网</b>才能访问。外网无法打开属正常现象。</div>
+      <h3>行业概览</h3>
+      <div class="link-grid">
+        <a href="https://zhuanlan.zhihu.com/p/26457799" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">📝</div><div class="info"><div class="name">游戏研发流程简介</div><div class="desc">知乎 · 从策划到上线的完整流程</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://news.qq.com/rain/a/20251219A0833L00" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">🎮</div><div class="info"><div class="name">2025游戏产业年会回顾</div><div class="desc">国内市场收入破3500亿/出海/AI/趋势分析</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://www.zhihu.com/question/67359146/answer/252086747" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">🏢</div><div class="info"><div class="name">游戏品类基础知识</div><div class="desc">知乎 · 熟知主要品类简写和代表游戏</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://game.woa.com/topics" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">🏛️</div><div class="info"><div class="name">腾讯游戏知识库 · 品类专题</div><div class="desc">射击/动作/MOBA/RPG详细知识</div></div><span class="tag tag-advanced">内网</span></a>
+      </div>
+      <h3>公司与组织架构</h3>
+      <div class="link-grid">
+        <a href="https://www.zhihu.com/question/53354065/answer/134703751" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">🏢</div><div class="info"><div class="name">常见国内游戏公司的组织架构</div><div class="desc">知乎 · 了解竞品公司怎么组织</div></div><span class="tag tag-basic">必学</span></a>
+      </div>
+      <h3>🎨 岗位知识 - 美术</h3>
+      <div class="link-grid">
+        <a href="https://www.hxsd.com/information/13708" target="_blank" class="link-item"><div class="icon" style="background:#FCE7F3">🎨</div><div class="info"><div class="name">游戏美术岗位详解</div><div class="desc">原画/3D建模/角色/场景/TA/特效/动画</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://www.bilibili.com/read/cv43715583" target="_blank" class="link-item"><div class="icon" style="background:#FCE7F3">📄</div><div class="info"><div class="name">CG游戏行业岗位全解析</div><div class="desc">B站专栏 · 美术各岗位技能/软件/学习难度</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://www.toutiao.com/article/7508665591788585472/" target="_blank" class="link-item"><div class="icon" style="background:#FCE7F3">🖌️</div><div class="info"><div class="name">游戏美术岗位选择指南</div><div class="desc">原画/3D建模/动画/特效/UI各岗详解</div></div><span class="tag tag-basic">必学</span></a>
+      </div>
+      <h3>📐 岗位知识 - 策划</h3>
+      <div class="link-grid">
+        <a href="https://gameinstitute.qq.com/talk" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">📐</div><div class="info"><div class="name">腾讯游戏学堂 · 策划课程</div><div class="desc">系统策划/关卡策划/战斗策划等科普</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://ac.nowcoder.com/discuss/1476120" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">📋</div><div class="info"><div class="name">游戏策划岗位分类详解</div><div class="desc">牛客 · 系统/关卡/数值/战斗/文案策划入行必看</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://www.yeyulingfeng.com/252639.html" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">🎯</div><div class="info"><div class="name">游戏策划岗位全解析</div><div class="desc">各子岗难度/技能/适配人群一览</div></div><span class="tag tag-basic">必学</span></a>
+      </div>
+      <h3>💻 岗位知识 - 程序</h3>
+      <div class="link-grid">
+        <a href="https://www.bilibili.com/video/BV1ft411v77L" target="_blank" class="link-item"><div class="icon" style="background:#FEF3C7">▶️</div><div class="info"><div class="name">游戏引擎岗位详解</div><div class="desc">B站 · UE/Unity引擎相关岗位</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://www.bilibili.com/video/BV1Qb411k7Js" target="_blank" class="link-item"><div class="icon" style="background:#FEE2E2">▶️</div><div class="info"><div class="name">游戏岗位全览视频</div><div class="desc">B站 · 游戏公司各岗位职能介绍</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://blog.csdn.net/Richard_shen/article/details/141610507" target="_blank" class="link-item"><div class="icon" style="background:#DBEAFE">📄</div><div class="info"><div class="name">游戏程序岗位入行指南</div><div class="desc">CSDN · 客户端/服务端/引擎开发岗位详解</div></div><span class="tag tag-basic">必学</span></a>
+      </div>
+      <h3>📢 岗位知识 - 运营/产品</h3>
+      <div class="link-grid">
+        <a href="https://game.woa.com/topics" target="_blank" class="link-item"><div class="icon" style="background:#FEF3C7">📢</div><div class="info"><div class="name">腾讯游戏知识库 · 运营/产品</div><div class="desc">运营/商业化/社区运营体系</div></div><span class="tag tag-advanced">内网</span></a>
+      </div>
+      <div class="note-box">💡 <b>重点关注：</b>美术岗位（原画/3D建模/TA/场景/角色/特效）和策划岗位（系统/关卡/数值/战斗/主策划）是sourcing的主要方向，务必深入理解各岗位职能差异～</div>
+    </div>
+    <div class="card">
+      <h2>🎯 招聘专业知识</h2>
+      <h3>Mapping & Sourcing基本功</h3>
+      <div class="link-grid">
+        <a href="https://www.zhihu.com/question/27268879/answer/191360985" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">🗺️</div><div class="info"><div class="name">Mapping基本功入门</div><div class="desc">知乎 · mapping方法论基础</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://zhuanlan.zhihu.com/p/1904102388874322429" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">🔍</div><div class="info"><div class="name">猎头找人的12条途径（2025版）</div><div class="desc">知乎 · 全渠道sourcing技巧</div></div><span class="tag tag-basic">必学</span></a>
+        <a href="https://www.zhihu.com/question/19551593" target="_blank" class="link-item"><div class="icon" style="background:#FEF3C7">📊</div><div class="info"><div class="name">如何做行业研究和竞品分析</div><div class="desc">知乎 · 行业研究方法论</div></div><span class="tag tag-advanced">进阶</span></a>
+      </div>
+      <h3>培训课程</h3>
+      <div class="link-grid">
+        <a href="https://s3.woa.com/learning/31/list" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">🎓</div><div class="info"><div class="name">招聘新力量（必修）</div><div class="desc">招聘新人入门必修课程</div></div><span class="tag tag-advanced">内网</span></a>
+        <a href="https://km.woa.com/group/46504" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">📚</div><div class="info"><div class="name">IEG招聘经理知识库</div><div class="desc">海量实战经验和案例</div></div><span class="tag tag-advanced">内网</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: 常用系统 -->
+  <div id="tab-tools" class="tab-content">
+    <div class="card">
+      <h2>🔧 招聘日常操作系统</h2>
+      <div class="link-grid">
+        <a href="https://hrright.woa.com/home" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">🔑</div><div class="info"><div class="name">权限中台</div><div class="desc">申请各系统权限入口（Day1必做）</div></div></a>
+        <a href="https://hr.woa.com" target="_blank" class="link-item"><div class="icon" style="background:#EDE9FE">👤</div><div class="info"><div class="name">HR门户</div><div class="desc">HR综合服务入口</div></div></a>
+        <a href="https://zhaopin.woa.com/zhaopin/Home" target="_blank" class="link-item"><div class="icon" style="background:#D1FAE5">💼</div><div class="info"><div class="name">招聘系统门户</div><div class="desc">招聘全流程操作（主战场）</div></div></a>
+        <a href="https://zhaopin.woa.com/dashboard/new-home" target="_blank" class="link-item"><div class="icon" style="background:#FEF3C7">📊</div><div class="info"><div class="name">招聘数据看版</div><div class="desc">数据分析和监控</div></div></a>
+        <a href="https://zhaopin.woa.com/rm/operator/home" target="_blank" class="link-item"><div class="icon" style="background:#FEF3C7">📢</div><div class="info"><div class="name">伯乐/媒体渠道资源</div><div class="desc">申请外部渠道资源</div></div></a>
+        <a href="https://8000.woa.com/v3/Software" target="_blank" class="link-item"><div class="icon" style="background:#FCE7F3">💻</div><div class="info"><div class="name">正版软件下载</div><div class="desc">内网正版软件中心</div></div></a>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📝 工具使用Tips</h2>
+      <div style="font-size:14px;line-height:2;">
+        <p><b>腾讯文档：</b>支持markdown。快捷键在右上角「帮助与反馈」→「快捷键」查看。善用批注功能。</p>
+        <p><b>企微日历：</b>可以查看同事空闲时间，约面试前先看面试官日历。</p>
+        <p><b>约会议室：</b>微信小程序搜「tencent home」→ 预定会议。热门时段提前1-2天约。</p>
+        <p><b>正版软件：</b>在 8000.woa.com/v3/Software 搜，不要自己下载破解版。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: 实习生 -->
+  <div id="tab-interns" class="tab-content">
+    <div class="card" id="week-summary-card" style="display:none;">
+      <h2>📊 全员本周晾晒</h2>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:13px;color:var(--text-light);">选择周次：</span>
+        <select id="summary-week-select" onchange="renderWeekSummary()" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></select>
+      </div>
+      <div class="summary-grid" id="summary-grid"></div>
+    </div>
+    <div id="interns-container"></div>
+  </div>
+
+  <!-- Tab: Dashboard -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="card">
+      <h2>📊 后台Dashboard</h2>
+      <div class="dash-stat-grid" id="dash-stats"></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card"><h3>📊 各项目候选人分布</h3><canvas id="chart-direction" height="200"></canvas></div>
+      <div class="chart-card"><h3>🎯 候选人状态分布</h3><canvas id="chart-status" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>👥 各实习生数据</h2>
+      <div id="dash-intern-cards"></div>
+      <div style="margin-top:16px;"><button class="btn-success" onclick="exportAllCSV()">📥 导出全部数据CSV</button></div>
+    </div>
+  </div>
+
+  <!-- Tab: 注意事项 -->
+  <div id="tab-notes" class="tab-content">
+    <div class="card">
+      <h2>🔒 保密要求（红线）</h2>
+      <div class="danger-box"><p><b>以下是绝对红线，请务必遵守：</b></p></div>
+      <ul style="padding-left:20px;font-size:14px;line-height:2.2;">
+        <li>候选人信息严格保密，不得以任何形式外泄</li>
+        <li>薪资、编制、Offer数据属于<b>高度机密</b></li>
+        <li>内部决策和团队讨论不对外分享</li>
+        <li>使用公司设备处理工作数据</li>
+        <li>不在个人社交媒体透露公司招聘相关信息</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>💡 一些小建议</h2>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">不是硬性规定，是帮你更顺畅工作的经验分享～</p>
+      <ul style="padding-left:20px;font-size:14px;line-height:2.2;color:#374151;">
+        <li>💬 建议<b>每日</b>花几分钟更新一下sourcing进展，方便自己回顾也方便mentor了解</li>
+        <li>📝 <b>每周</b>简单写个周报（做了什么 + 下周想做什么 + 有没有卡住的地方）</li>
+        <li>☕ <b>每两周</b>和mentor聊一次，同步方向、答疑、调整节奏</li>
+        <li>👍 推荐简历时顺手附上推荐理由（一两句话就好），业务方看着更方便</li>
+        <li>🗂️ mapping报告尽量有结构感（按公司拆解），比一长串名字更清晰</li>
+        <li>🔄 候选人状态记得及时更新，这样自己不会忘，团队也好协同</li>
+        <li>🙋 有问题随时问！问比猜靠谱，团队氛围很开放的～</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>❓ 常见问题FAQ</h2>
+      <div class="faq-item"><div class="q">Q: 不懂游戏行业怎么办？</div><div class="a">A: 太正常了！先看学习资料tab，2周内建立基础认知。多看JD+行业新闻就好～</div></div>
+      <div class="faq-item"><div class="q">Q: Sourcing找不到合适的人？</div><div class="a">A: 换关键词、换渠道、看看同事怎么搜的、问mentor拿参考画像。</div></div>
+      <div class="faq-item"><div class="q">Q: 候选人不回复怎么办？</div><div class="a">A: 换话术、换时间段、换渠道触达、过几天再试。不回复≠不感兴趣哦～</div></div>
+      <div class="faq-item"><div class="q">Q: 怎么判断简历是否有效？</div><div class="a">A: 对照JD核心要求，满足60%以上就推，让业务方来判断。</div></div>
+      <div class="faq-item"><div class="q">Q: Mapping怎么开始？</div><div class="a">A: 先和mentor确认画像，锁定2-3家目标公司，从LinkedIn/脉脉拆解架构。</div></div>
+      <div class="faq-item"><div class="q">Q: 系统权限怎么申请？</div><div class="a">A: 权限中台统一申请，不确定的找mentor就行。</div></div>
+    </div>
+  </div>
+
+  <!-- Tab: 设置 -->
+  <div id="tab-settings" class="tab-content">
+    <div class="card admin-code-section">
+      <h2>🔐 管理员口令</h2>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">只有输入正确管理员口令的人才能进入管理模式（设置页面）。最多2人拥有管理员权限。</p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="password" id="admin-code-input" placeholder="设置/修改管理员口令..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;">
+        <button class="btn-primary" onclick="setAdminCode()">设置口令</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-light);margin-top:8px;">当前口令：<span id="admin-code-display">未设置</span></p>
+    </div>
+    <div class="card">
+      <h2>⚙️ 团队管理</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="margin:0;">👥 成员列表</h3>
+        <button class="btn-primary" onclick="showAddUserModal()">+ 添加成员</button>
+      </div>
+      <div id="user-list-container"></div>
+    </div>
+  </div>
+</div>
+
+<div class="save-bar"><button class="save-btn" onclick="saveAllData()">💾 保存</button></div>
+<div class="save-notice" id="save-notice">✅ 已保存</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <h2 id="modal-user-title">添加成员</h2>
+    <div class="form-group">
+      <label>姓名</label>
+      <input type="text" id="mu-name" placeholder="例：张三">
+    </div>
+    <div class="form-group">
+      <label>角色</label>
+      <select id="mu-role" onchange="onRoleChange()">
+        <option value="intern">实习生 (Intern)</option>
+        <option value="mentor">导师 (Mentor)</option>
+        <option value="leader">Leader</option>
+      </select>
+    </div>
+    <div class="form-group" id="mu-project-group">
+      <label>项目（手动填写）</label>
+      <input type="text" id="mu-project" placeholder="例：S美术泛校招、天玑美术社招...">
+    </div>
+    <div class="form-group" id="mu-mentor-group">
+      <label>指定Mentor</label>
+      <select id="mu-mentor"></select>
+    </div>
+    <input type="hidden" id="mu-edit-id" value="">
+    <div class="form-actions">
+      <button class="btn-outline" onclick="hideModal('modal-user')">取消</button>
+      <button class="btn-primary" onclick="saveUserFromModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Login Modal -->
+<div class="modal-overlay" id="modal-admin">
+  <div class="modal">
+    <h2>🔐 请输入管理员口令</h2>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;">需要管理员口令才能进入设置页面</p>
+    <div class="form-group">
+      <label>口令</label>
+      <input type="password" id="admin-login-input" placeholder="输入管理员口令...">
+    </div>
+    <div class="form-actions">
+      <button class="btn-outline" onclick="hideModal('modal-admin'); switchTab('learn');">取消</button>
+      <button class="btn-primary" onclick="verifyAdminCode()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// CONSTANTS
+// ============================================
+const WEEKS = ['5/11-5/15','5/18-5/22','5/25-5/29','6/1-6/5','6/8-6/12','6/15-6/19','6/22-6/26','6/29-7/3','7/6-7/10','7/13-7/17','7/20-7/24','7/27-7/31','8/3-8/7','8/10-8/14','8/17-8/21','8/24-8/28','8/31-9/4','9/7-9/11','9/14-9/18','9/21-9/25','9/28-10/2','10/5-10/9','10/12-10/16','10/19-10/23'];
+const CANDIDATE_FIELDS = ['姓名','项目','岗位','公司','渠道','状态','推荐日期','简历链接','Comments'];
+const STATUSES = ['待触达','已触达','沟通中','已推荐','面试中','已offer','不合适','暂无意向'];
+const CHANNELS = ['Boss直聘','猎聘','LinkedIn','脉脉','ArtStation','内部简历库','校园渠道','其他'];
+
+// ============================================
+// DATA LAYER
+// ============================================
+function loadData(key, fallback) { try { return JSON.parse(localStorage.getItem('phub_' + key)) || fallback; } catch(e) { return fallback; } }
+function saveData(key, data) { localStorage.setItem('phub_' + key, JSON.stringify(data)); }
+function getUsers() { return loadData('users', []); }
+function saveUsers(users) { saveData('users', users); }
+function getAdminCode() { return localStorage.getItem('phub_admin_code') || ''; }
+function setAdminCodeValue(code) { localStorage.setItem('phub_admin_code', code); }
+function getReviewData(userId) { return loadData('reviews_' + userId, {}); }
+function saveReviewData(userId, data) { saveData('reviews_' + userId, data); }
+function getTrackData(userId) { return loadData('track_' + userId, []); }
+function saveTrackData(userId, data) { saveData('track_' + userId, data); }
+function getPlanData(userId) { return loadData('plan_' + userId, null); }
+function savePlanData(userId, data) { saveData('plan_' + userId, data); }
+
+let currentUserId = null;
+let adminVerified = false; // session-level admin verification
+
+function getCurrentUser() { return getUsers().find(u => u.id === currentUserId); }
+function getUserById(id) { return getUsers().find(u => u.id === id); }
+function getInterns() { return getUsers().filter(u => u.role === 'intern'); }
+function getMentors() { return getUsers().filter(u => u.role === 'mentor'); }
+function getLeaders() { return getUsers().filter(u => u.role === 'leader'); }
+
+// Permission helpers
+function canManageAll() { const u = getCurrentUser(); return u && u.role === 'leader' && adminVerified; }
+function canEditPlan(internId) {
+  const u = getCurrentUser();
+  if (!u) return false;
+  if (u.role === 'leader') return true;
+  if (u.role === 'mentor') { const intern = getUserById(internId); return intern && intern.mentorId === u.id; }
+  return false;
+}
+function isOwnProfile(userId) { return currentUserId === userId; }
+function canEditData(userId) {
+  const u = getCurrentUser();
+  if (!u) return false;
+  if (u.id === userId) return true;
+  if (u.role === 'leader') return true;
+  if (u.role === 'mentor') { const intern = getUserById(userId); return intern && intern.mentorId === u.id; }
+  return false;
+}
+
+// ============================================
+// INIT
+// ============================================
+function init() {
+  const users = getUsers();
+  if (users.length === 0) { firstTimeSetup(); return; }
+  const savedId = localStorage.getItem('phub_current_user');
+  currentUserId = (savedId && getUserById(savedId)) ? savedId : users[0].id;
+  renderApp();
+}
+
+function firstTimeSetup() {
+  const defaultLeader = { id: genId(), name: '管理员', role: 'leader', project: '', mentorId: '' };
+  saveUsers([defaultLeader]);
+  currentUserId = defaultLeader.id;
+  adminVerified = true;
+  localStorage.setItem('phub_current_user', currentUserId);
+  renderApp();
+  switchTab('settings');
+  showNotice('🐧 欢迎！请先设置管理员口令并添加团队成员');
+}
+
+function renderApp() {
+  renderUserSelector();
+  renderTabs();
+  updateUserMetaDisplay();
+  const activeTab = document.querySelector('#main-tabs .tab-btn.active');
+  if (activeTab) {
+    const tabId = activeTab.getAttribute('data-tab');
+    if (tabId === 'interns') renderInternsTab();
+    if (tabId === 'dashboard') renderDashboard();
+    if (tabId === 'settings') renderSettingsTab();
+  }
+}
+
+function renderUserSelector() {
+  const selector = document.getElementById('user-selector');
+  const users = getUsers();
+  const roleLabel = { leader: '👑', mentor: '👨‍💼', intern: '🎯' };
+  selector.innerHTML = users.map(u => '<option value="' + u.id + '">' + (roleLabel[u.role]||'') + ' ' + u.name + (u.project ? ' · ' + u.project : '') + '</option>').join('');
+  selector.value = currentUserId;
+}
+
+function switchUser(userId) {
+  const targetUser = getUserById(userId);
+  if (!targetUser) return;
+  currentUserId = userId;
+  localStorage.setItem('phub_current_user', currentUserId);
+  // Reset admin verification when switching away from leader
+  if (targetUser.role !== 'leader') adminVerified = false;
+  renderUserSelector();
+  updateUserMetaDisplay();
+  const prevActiveBtn = document.querySelector('#main-tabs .tab-btn.active');
+  const prevTabId = prevActiveBtn ? prevActiveBtn.getAttribute('data-tab') : 'learn';
+  localStorage.setItem('phub_active_tab', prevTabId);
+  renderTabs();
+  const activeTab = document.querySelector('#main-tabs .tab-btn.active');
+  if (activeTab) {
+    const tabId = activeTab.getAttribute('data-tab');
+    if (tabId === 'interns') renderInternsTab();
+    if (tabId === 'dashboard') renderDashboard();
+    if (tabId === 'settings') renderSettingsTab();
+  }
+}
+
+function updateUserMetaDisplay() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const roleNames = { leader: 'Leader', mentor: 'Mentor', intern: '实习生' };
+  let html = '<span>👤 ' + user.name + '</span><span>🏷️ ' + roleNames[user.role] + '</span>';
+  if (user.project) html += '<span>📂 ' + user.project + '</span>';
+  if (user.role === 'intern') { const m = getUserById(user.mentorId); if (m) html += '<span>👨‍💼 Mentor: ' + m.name + '</span>'; }
+  document.getElementById('user-meta-display').innerHTML = html;
+}
+
+// ============================================
+// TABS
+// ============================================
+function renderTabs() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const tabs = [
+    { id: 'learn', label: '📚 学习资料', roles: ['intern','mentor','leader'] },
+    { id: 'tools', label: '🔧 常用系统', roles: ['intern','mentor','leader'] },
+    { id: 'interns', label: '👤 实习生', roles: ['intern','mentor','leader'] },
+    { id: 'dashboard', label: '📊 Dashboard', roles: ['mentor','leader'] },
+    { id: 'notes', label: '💬 注意事项', roles: ['intern','mentor','leader'] },
+    { id: 'settings', label: '⚙️ 设置', roles: ['leader'] },
+  ];
+  const visibleTabs = tabs.filter(t => t.roles.includes(user.role));
+  const navEl = document.getElementById('main-tabs');
+  const savedTabId = localStorage.getItem('phub_active_tab') || 'learn';
+  const targetTabId = visibleTabs.find(t => t.id === savedTabId) ? savedTabId : visibleTabs[0].id;
+  navEl.innerHTML = visibleTabs.map(t => '<button class="tab-btn ' + (t.id === targetTabId ? 'active' : '') + '" data-tab="' + t.id + '" onclick="switchTab(\'' + t.id + '\')">' + t.label + '</button>').join('');
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  const activeContent = document.getElementById('tab-' + targetTabId);
+  if (activeContent) activeContent.classList.add('active');
+}
+
+function switchTab(tabId) {
+  // Admin verification gate for settings
+  if (tabId === 'settings' && !adminVerified) {
+    const code = getAdminCode();
+    if (code) { showModal('modal-admin'); return; }
+    else { adminVerified = true; } // No code set yet, allow through
+  }
+  localStorage.setItem('phub_active_tab', tabId);
+  document.querySelectorAll('#main-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  const btn = document.querySelector('#main-tabs .tab-btn[data-tab="' + tabId + '"]');
+  if (btn) btn.classList.add('active');
+  const content = document.getElementById('tab-' + tabId);
+  if (content) content.classList.add('active');
+  if (tabId === 'interns') renderInternsTab();
+  if (tabId === 'dashboard') renderDashboard();
+  if (tabId === 'settings') renderSettingsTab();
+}
+
+// ============================================
+// ADMIN CODE
+// ============================================
+function setAdminCode() {
+  const input = document.getElementById('admin-code-input');
+  const code = input.value.trim();
+  if (!code) { alert('请输入口令'); return; }
+  setAdminCodeValue(code);
+  input.value = '';
+  document.getElementById('admin-code-display').textContent = '••••••（已设置）';
+  showNotice('✅ 管理员口令已设置');
+}
+
+function verifyAdminCode() {
+  const input = document.getElementById('admin-login-input');
+  const code = input.value.trim();
+  if (code === getAdminCode()) {
+    adminVerified = true;
+    input.value = '';
+    hideModal('modal-admin');
+    switchTab('settings');
+  } else {
+    alert('口令错误！');
+  }
+}
+
+// ============================================
+// SETTINGS TAB
+// ============================================
+function renderSettingsTab() {
+  const users = getUsers();
+  const container = document.getElementById('user-list-container');
+  const roleColors = { leader: 'linear-gradient(135deg,#EC4899,#F59E0B)', mentor: 'linear-gradient(135deg,#8B5CF6,#6366F1)', intern: 'linear-gradient(135deg,#10B981,#06B6D4)' };
+  const roleLabels = { leader: 'Leader', mentor: 'Mentor', intern: 'Intern' };
+  const roleBadgeClass = { leader: 'role-leader', mentor: 'role-mentor', intern: 'role-intern' };
+
+  container.innerHTML = users.map(u => {
+    const mentor = u.mentorId ? getUserById(u.mentorId) : null;
+    return '<div class="user-list-item">' +
+      '<div class="avatar-sm" style="background:' + roleColors[u.role] + '">' + u.name[0] + '</div>' +
+      '<div class="user-info"><div class="uname">' + u.name + (u.id === currentUserId ? ' <span style="font-size:10px;background:#D1FAE5;color:#065F46;padding:1px 6px;border-radius:4px;">当前</span>' : '') + '</div>' +
+      '<div class="umeta">' + (u.project || '') + (mentor ? ' · Mentor: ' + mentor.name : '') + '</div></div>' +
+      '<span class="role-badge ' + roleBadgeClass[u.role] + '">' + roleLabels[u.role] + '</span>' +
+      '<button class="btn-outline" onclick="editUser(\'' + u.id + '\')" style="font-size:11px;padding:4px 10px;">编辑</button>' +
+      (u.id !== currentUserId ? '<button class="btn-danger" onclick="deleteUser(\'' + u.id + '\')">删除</button>' : '') +
+      '</div>';
+  }).join('');
+
+  // Admin code display
+  const code = getAdminCode();
+  document.getElementById('admin-code-display').textContent = code ? '••••••（已设置）' : '未设置';
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+function showAddUserModal() {
+  document.getElementById('modal-user-title').textContent = '添加成员';
+  document.getElementById('mu-name').value = '';
+  document.getElementById('mu-role').value = 'intern';
+  document.getElementById('mu-project').value = '';
+  document.getElementById('mu-edit-id').value = '';
+  onRoleChange();
+  showModal('modal-user');
+}
+
+function editUser(userId) {
+  const user = getUserById(userId);
+  if (!user) return;
+  document.getElementById('modal-user-title').textContent = '编辑成员';
+  document.getElementById('mu-name').value = user.name;
+  document.getElementById('mu-role').value = user.role;
+  document.getElementById('mu-project').value = user.project || '';
+  document.getElementById('mu-edit-id').value = user.id;
+  onRoleChange();
+  setTimeout(() => { if (user.mentorId) document.getElementById('mu-mentor').value = user.mentorId; }, 50);
+  showModal('modal-user');
+}
+
+function onRoleChange() {
+  const role = document.getElementById('mu-role').value;
+  document.getElementById('mu-project-group').style.display = role === 'intern' ? '' : 'none';
+  document.getElementById('mu-mentor-group').style.display = role === 'intern' ? '' : 'none';
+  // Populate mentor options
+  const mentorSelect = document.getElementById('mu-mentor');
+  const mentors = [...getMentors(), ...getLeaders()];
+  mentorSelect.innerHTML = '<option value="">请选择Mentor</option>' + mentors.map(m => '<option value="' + m.id + '">' + m.name + '</option>').join('');
+}
+
+function saveUserFromModal() {
+  const name = document.getElementById('mu-name').value.trim();
+  if (!name) { alert('请输入姓名'); return; }
+  const role = document.getElementById('mu-role').value;
+  const project = document.getElementById('mu-project').value.trim();
+  const mentorId = document.getElementById('mu-mentor').value;
+  const editId = document.getElementById('mu-edit-id').value;
+
+  // Limit leaders to 2
+  const users = getUsers();
+  if (role === 'leader' && !editId) {
+    const leaderCount = users.filter(u => u.role === 'leader').length;
+    if (leaderCount >= 2) { alert('管理员最多2人！'); return; }
+  }
+
+  if (editId) {
+    const idx = users.findIndex(u => u.id === editId);
+    if (idx >= 0) {
+      if (role === 'leader' && users[idx].role !== 'leader') {
+        const leaderCount = users.filter(u => u.role === 'leader').length;
+        if (leaderCount >= 2) { alert('管理员最多2人！'); return; }
+      }
+      users[idx].name = name;
+      users[idx].role = role;
+      users[idx].project = project;
+      users[idx].mentorId = mentorId;
+    }
+  } else {
+    users.push({ id: genId(), name, role, project, mentorId });
+  }
+
+  saveUsers(users);
+  hideModal('modal-user');
+  renderApp();
+  showNotice('✅ 成员已保存');
+}
+
+function deleteUser(userId) {
+  if (!confirm('确定删除该成员？')) return;
+  saveUsers(getUsers().filter(u => u.id !== userId));
+  renderApp();
+}
+
+// ============================================
+// INTERNS TAB
+// ============================================
+function renderInternsTab() {
+  const container = document.getElementById('interns-container');
+  const user = getCurrentUser();
+  if (!user) return;
+
+  let internsToShow = [];
+  if (user.role === 'leader') internsToShow = getInterns();
+  else if (user.role === 'mentor') internsToShow = getInterns().filter(i => i.mentorId === user.id);
+  else internsToShow = getInterns().filter(i => i.id === user.id);
+
+  const summaryCard = document.getElementById('week-summary-card');
+  if (user.role !== 'intern' && internsToShow.length > 0) {
+    summaryCard.style.display = 'block';
+    document.getElementById('summary-week-select').innerHTML = WEEKS.map((w, i) => '<option value="' + (i+1) + '">W' + (i+1) + ' · ' + w + '</option>').join('');
+    renderWeekSummary();
+  } else { summaryCard.style.display = 'none'; }
+
+  if (internsToShow.length === 0) {
+    container.innerHTML = '<div class="card" style="text-align:center;padding:40px;"><p style="font-size:48px;margin-bottom:12px;">🐧</p><p style="font-size:16px;font-weight:600;">还没有实习生</p><p style="font-size:13px;color:var(--text-light);">' + (user.role !== 'intern' ? '去「⚙️ 设置」中添加实习生吧～' : '请联系Leader添加你的账号') + '</p></div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  internsToShow.forEach(intern => {
+    const trackData = getTrackData(intern.id);
+    const reviewData = getReviewData(intern.id);
+    const totalCandidates = trackData.length;
+    const interviews = trackData.filter(c => ['面试中','已offer'].includes(c['状态'])).length;
+    let reviewDone = 0;
+    for (let w = 1; w <= 24; w++) { if (reviewData[w] && reviewData[w].done && reviewData[w].done.trim()) reviewDone++; }
+    const mentor = getUserById(intern.mentorId);
+
+    container.innerHTML += '<div class="intern-card" id="intern-card-' + intern.id + '">' +
+      '<div class="intern-card-header" onclick="toggleInternCard(\'' + intern.id + '\')">' +
+      '<div class="left"><div class="avatar">' + intern.name[0] + '</div><div class="info-block"><div class="intern-name">' + intern.name + (isOwnProfile(intern.id) ? ' <span style="font-size:11px;background:#D1FAE5;color:#065F46;padding:1px 8px;border-radius:4px;margin-left:6px;">我</span>' : '') + '</div>' +
+      '<div class="intern-meta">' + (intern.project || '未设项目') + (mentor ? ' · Mentor: ' + mentor.name : '') + '</div></div></div>' +
+      '<div class="quick-stats"><div class="quick-stat"><div class="qs-num">' + totalCandidates + '</div><div class="qs-label">候选人</div></div>' +
+      '<div class="quick-stat"><div class="qs-num" style="color:var(--green)">' + interviews + '</div><div class="qs-label">面试+</div></div>' +
+      '<div class="quick-stat"><div class="qs-num" style="color:var(--pink)">' + reviewDone + '/24</div><div class="qs-label">周报</div></div></div>' +
+      '<span class="arrow">▶</span></div>' +
+      '<div class="intern-card-body" id="intern-body-' + intern.id + '"></div></div>';
+  });
+}
+
+function toggleInternCard(userId) {
+  const card = document.getElementById('intern-card-' + userId);
+  const wasOpen = card.classList.contains('open');
+  card.classList.toggle('open');
+  if (!wasOpen) renderInternBody(userId);
+}
+
+function renderInternBody(userId) {
+  const body = document.getElementById('intern-body-' + userId);
+  body.innerHTML = '<div class="sub-tabs">' +
+    '<button class="sub-tab-btn active" onclick="switchSubTab(\'' + userId + '\',\'plan\',this)">📋 培养计划</button>' +
+    '<button class="sub-tab-btn" onclick="switchSubTab(\'' + userId + '\',\'review\',this)">✍️ 每周Review</button>' +
+    '<button class="sub-tab-btn" onclick="switchSubTab(\'' + userId + '\',\'track\',this)">📊 Sourcing Track</button>' +
+    '</div><div id="sub-plan-' + userId + '" class="sub-tab-content active"></div>' +
+    '<div id="sub-review-' + userId + '" class="sub-tab-content"></div>' +
+    '<div id="sub-track-' + userId + '" class="sub-tab-content"></div>';
+  renderPlanSection(userId);
+  renderReviewSection(userId);
+  renderTrackSection(userId);
+}
+
+function switchSubTab(userId, tabName, btn) {
+  const body = document.getElementById('intern-body-' + userId);
+  body.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+  body.querySelectorAll('.sub-tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sub-' + tabName + '-' + userId).classList.add('active');
+}
+
+// ============================================
+// PLAN SECTION
+// ============================================
+function getDefaultPlan() {
+  return [
+    { phase: '第一阶段 · 快速上手', week: 'W1', goal: '业务熟悉 + sourcing实操启动', tasks: '1. 了解组织架构和在招方向\n2. 学习Offer系统\n3. 开始sourcing实操\n4. 掌握搜索关键词体系', output: '首批简历推荐' },
+    { phase: '第一阶段 · 快速上手', week: 'W2', goal: 'sourcing放量 + mapping方法学习', tasks: '1. sourcing持续推进\n2. 学习mapping方法论\n3. 跟听面试\n4. 锁定目标公司', output: '简历持续推荐' },
+    { phase: '第二阶段 · 双线并行', week: 'W3-4', goal: '双线放量', tasks: '1. 主方向sourcing放量\n2. 建立候选人标签体系\n3. 打磨触达话术', output: '候选人pool表、周报' },
+    { phase: '第二阶段 · 双线并行', week: 'W5-8', goal: '深度sourcing + mapping', tasks: '1. 通过mapping锁定目标人选\n2. 定向触达\n3. 扩展到3-5家目标公司\n4. 深度拆解组织架构', output: 'Mapping报告' },
+    { phase: '第三阶段 · 稳定产出', week: 'W9-14', goal: '稳定交付 + 方法论沉淀', tasks: '1. 稳定产出\n2. 重点跟进高潜候选人\n3. 整理方法论\n4. 更新mapping终稿', output: '方法论文档、Mapping终稿' },
+    { phase: '第四阶段 · 独立运作', week: 'W15-20', goal: '独立承担 + 深化认知', tasks: '1. 独立负责周度规划\n2. 尝试新方向\n3. 输出人才洞察\n4. 成果盘点', output: '独立周报、人才洞察' },
+    { phase: '第五阶段 · 收尾交接', week: 'W21-24', goal: '知识交接 + 复盘', tasks: '1. 整理所有候选人资料\n2. 实习总结\n3. 交接文档\n4. 答辩PPT', output: '交接文档、答辩PPT 🐧' },
+  ];
+}
+
+function renderPlanSection(userId) {
+  const container = document.getElementById('sub-plan-' + userId);
+  const plan = getPlanData(userId) || getDefaultPlan();
+  const canEdit = canEditPlan(userId);
+  let html = '';
+
+  if (canEdit) {
+    html += '<div style="display:flex;gap:8px;margin-bottom:16px;"><button class="btn-primary" id="pe-toggle-' + userId + '" onclick="togglePlanEditor(\'' + userId + '\')">✏️ 编辑培养计划</button>' +
+      '<button class="btn-outline" onclick="resetPlan(\'' + userId + '\')">🔄 重置默认</button>' +
+      '<span style="font-size:12px;color:var(--text-light);align-self:center;">（Mentor/Leader 可编辑）</span></div>' +
+      '<div id="plan-editor-' + userId + '" style="display:none;"></div>';
+  }
+
+  html += '<div id="plan-view-' + userId + '">';
+  let lastPhase = '';
+  plan.forEach(item => {
+    if (item.phase !== lastPhase) {
+      html += '<div style="margin-top:' + (lastPhase ? '16px' : '0') + ';margin-bottom:8px;"><span style="display:inline-block;padding:6px 14px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;font-weight:600;font-size:13px;border-radius:6px;">' + item.phase + '</span></div>';
+      lastPhase = item.phase;
+    }
+    html += '<div class="plan-card"><div class="plan-week">📅 ' + item.week + '</div><div class="plan-goal">' + item.goal + '</div><div class="plan-tasks">' + (item.tasks||'').replace(/\n/g,'<br>') + '</div><div class="plan-output">产出：' + (item.output||'').split(/[、,]/).map(o => '<span>' + o.trim() + '</span>').join(' ') + '</div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function togglePlanEditor(userId) {
+  const editorEl = document.getElementById('plan-editor-' + userId);
+  const viewEl = document.getElementById('plan-view-' + userId);
+  if (editorEl.style.display !== 'none') {
+    editorEl.style.display = 'none'; viewEl.style.display = '';
+    document.getElementById('pe-toggle-' + userId).textContent = '✏️ 编辑培养计划';
+  } else {
+    editorEl.style.display = ''; viewEl.style.display = 'none';
+    document.getElementById('pe-toggle-' + userId).textContent = '👁️ 查看模式';
+    renderPlanEditor(userId);
+  }
+}
+
+function renderPlanEditor(userId) {
+  const el = document.getElementById('plan-editor-' + userId);
+  const plan = getPlanData(userId) || getDefaultPlan();
+  let html = '<div class="plan-editor"><div style="display:flex;justify-content:space-between;margin-bottom:12px;"><h3 style="margin:0;">编辑培养计划</h3><div style="display:flex;gap:8px;"><button class="btn-primary" onclick="addPlanItem(\'' + userId + '\')">+ 添加</button><button class="btn-success" onclick="savePlanEditor(\'' + userId + '\')">💾 保存</button></div></div>';
+  html += '<div class="pe-header"><span>阶段</span><span>周次</span><span>目标</span><span>任务</span><span>产出</span><span></span></div>';
+  html += '<div id="pe-rows-' + userId + '">';
+  plan.forEach((item, idx) => {
+    html += '<div class="pe-row" data-idx="' + idx + '">' +
+      '<input type="text" value="' + esc(item.phase) + '" data-field="phase" placeholder="阶段">' +
+      '<input type="text" value="' + esc(item.week) + '" data-field="week" placeholder="W1">' +
+      '<input type="text" value="' + esc(item.goal) + '" data-field="goal" placeholder="目标">' +
+      '<textarea data-field="tasks" placeholder="任务">' + esc(item.tasks) + '</textarea>' +
+      '<input type="text" value="' + esc(item.output) + '" data-field="output" placeholder="产出">' +
+      '<button class="btn-danger" onclick="removePlanItem(\'' + userId + '\',' + idx + ')">🗑️</button></div>';
+  });
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+
+function addPlanItem(userId) { const p = getPlanData(userId)||getDefaultPlan(); p.push({phase:'',week:'',goal:'',tasks:'',output:''}); savePlanData(userId,p); renderPlanEditor(userId); }
+function removePlanItem(userId, idx) { const p = getPlanData(userId)||getDefaultPlan(); p.splice(idx,1); savePlanData(userId,p); renderPlanEditor(userId); }
+function savePlanEditor(userId) {
+  const rows = document.querySelectorAll('#pe-rows-' + userId + ' .pe-row');
+  const plan = [];
+  rows.forEach(r => { plan.push({ phase: r.querySelector('[data-field="phase"]').value, week: r.querySelector('[data-field="week"]').value, goal: r.querySelector('[data-field="goal"]').value, tasks: r.querySelector('[data-field="tasks"]').value, output: r.querySelector('[data-field="output"]').value }); });
+  savePlanData(userId, plan);
+  togglePlanEditor(userId);
+  renderPlanSection(userId);
+  showNotice('✅ 培养计划已保存');
+}
+function resetPlan(userId) { if(!confirm('重置为默认模板？'))return; savePlanData(userId,getDefaultPlan()); renderPlanSection(userId); }
+
+// ============================================
+// REVIEW SECTION
+// ============================================
+function renderReviewSection(userId) {
+  const container = document.getElementById('sub-review-' + userId);
+  const data = getReviewData(userId);
+  const canEdit = isOwnProfile(userId);
+  let html = '<div class="week-pills">';
+  for (let w = 1; w <= 24; w++) {
+    const hasDone = data[w] && data[w].done && data[w].done.trim();
+    html += '<span class="week-pill ' + (w===1?'active':'') + '" onclick="selectReviewWeek(\'' + userId + '\',' + w + ',this)" style="' + (hasDone?'background:#D1FAE5;color:#065F46;border-color:#A7F3D0;':'') + '">W' + w + '</span>';
+  }
+  html += '</div>';
+  for (let w = 1; w <= 24; w++) {
+    const s = data[w] || {};
+    const dis = canEdit ? '' : 'disabled';
+    html += '<div id="rvw-' + userId + '-' + w + '" style="display:' + (w===1?'block':'none') + ';"><div class="card" style="margin-bottom:12px;"><h3 style="margin-top:0;">W' + w + ' · ' + WEEKS[w-1] + '</h3>' +
+      '<div class="review-field"><label>本周核心任务</label><textarea id="rv-' + userId + '-' + w + '-tasks" placeholder="本周要做什么..." ' + dis + '>' + (s.tasks||'') + '</textarea></div>' +
+      '<div class="review-field"><label>完成情况</label><textarea id="rv-' + userId + '-' + w + '-done" placeholder="做了什么..." ' + dis + '>' + (s.done||'') + '</textarea></div>' +
+      '<div class="review-field"><label>下周计划</label><textarea id="rv-' + userId + '-' + w + '-plan" placeholder="下周打算做什么..." ' + dis + '>' + (s.plan||'') + '</textarea></div>' +
+      '<div class="review-field"><label>问题 & 需要支持</label><textarea id="rv-' + userId + '-' + w + '-issues" placeholder="困难..." ' + dis + '>' + (s.issues||'') + '</textarea></div>' +
+      '</div></div>';
+  }
+  container.innerHTML = html;
+  if (canEdit) container.addEventListener('input', () => { clearTimeout(window['_rvt_'+userId]); window['_rvt_'+userId] = setTimeout(() => saveReview(userId), 1500); });
+}
+
+function selectReviewWeek(userId, week, pill) {
+  const c = document.getElementById('sub-review-' + userId);
+  c.querySelectorAll('.week-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  for (let w = 1; w <= 24; w++) { const el = document.getElementById('rvw-' + userId + '-' + w); if (el) el.style.display = w===week?'block':'none'; }
+}
+
+function saveReview(userId) {
+  const data = {};
+  for (let w = 1; w <= 24; w++) {
+    const g = f => { const el = document.getElementById('rv-' + userId + '-' + w + '-' + f); return el ? el.value : ''; };
+    data[w] = { tasks: g('tasks'), done: g('done'), plan: g('plan'), issues: g('issues') };
+  }
+  saveReviewData(userId, data);
+  showNotice();
+}
+
+// ============================================
+// WEEK SUMMARY
+// ============================================
+function renderWeekSummary() {
+  const week = parseInt(document.getElementById('summary-week-select').value) || 1;
+  const grid = document.getElementById('summary-grid');
+  const user = getCurrentUser();
+  let interns = user.role === 'leader' ? getInterns() : getInterns().filter(i => i.mentorId === user.id);
+  let html = '';
+  interns.forEach(intern => {
+    const d = getReviewData(intern.id)[week] || {};
+    html += '<div class="summary-card"><div class="sc-name">🐧 ' + intern.name + ' · ' + (intern.project||'') + '</div>' +
+      '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">' + (d.done || '<i>暂无填写</i>') + '</div></div>';
+  });
+  grid.innerHTML = html || '<p style="color:var(--text-light);font-size:13px;text-align:center;padding:20px;">暂无数据</p>';
+}
+
+// ============================================
+// SOURCING TRACK
+// ============================================
+function renderTrackSection(userId) {
+  const container = document.getElementById('sub-track-' + userId);
+  const data = getTrackData(userId);
+  const canEdit = canEditData(userId);
+  const total = data.length;
+  const recommended = data.filter(c => ['已推荐','面试中','已offer'].includes(c['状态'])).length;
+  const interviewing = data.filter(c => c['状态'] === '面试中').length;
+  const offered = data.filter(c => c['状态'] === '已offer').length;
+
+  let html = '<div class="stats-card"><div class="stats-grid">' +
+    '<div class="stat-box"><div class="num">' + total + '</div><div class="label">总候选人</div></div>' +
+    '<div class="stat-box"><div class="num" style="color:#F59E0B">' + recommended + '</div><div class="label">已推荐+</div></div>' +
+    '<div class="stat-box"><div class="num" style="color:#10B981">' + interviewing + '</div><div class="label">面试中</div></div>' +
+    '<div class="stat-box"><div class="num" style="color:#EC4899">' + offered + '</div><div class="label">已offer 🎉</div></div>' +
+    '</div></div>';
+
+  if (canEdit) {
+    html += '<div style="display:flex;gap:8px;margin-bottom:12px;"><button class="btn-primary" onclick="addCandidate(\'' + userId + '\')">+ 添加候选人</button><button class="btn-success" onclick="exportTrack(\'' + userId + '\')">📥 导出CSV</button></div>';
+  }
+
+  html += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">' +
+    '<span style="font-size:12px;color:var(--text-light);">筛选：</span>' +
+    '<select id="tf-status-' + userId + '" onchange="rerenderCandidates(\'' + userId + '\')" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;"><option value="">全部状态</option>' + STATUSES.map(s => '<option value="' + s + '">' + s + '</option>').join('') + '</select>' +
+    '<span id="tf-count-' + userId + '" style="font-size:12px;color:var(--text-light);margin-left:auto;"></span></div>';
+
+  html += '<div id="candidates-list-' + userId + '"></div>';
+  container.innerHTML = html;
+  rerenderCandidates(userId);
+}
+
+function rerenderCandidates(userId) {
+  const data = getTrackData(userId);
+  const canEdit = canEditData(userId);
+  const statusF = document.getElementById('tf-status-' + userId)?.value || '';
+  let filtered = data;
+  if (statusF) filtered = filtered.filter(c => c['状态'] === statusF);
+  const countEl = document.getElementById('tf-count-' + userId);
+  if (countEl) countEl.textContent = '显示 ' + filtered.length + ' / 总 ' + data.length;
+  const listEl = document.getElementById('candidates-list-' + userId);
+  if (!listEl) return;
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);font-size:14px;">' + (data.length === 0 ? '还没有候选人，点击「+ 添加候选人」开始 🐧' : '没有匹配') + '</div>';
+    return;
+  }
+
+  const dis = canEdit ? '' : 'disabled';
+  listEl.innerHTML = filtered.map(c => {
+    return '<div class="candidate-card"><div class="candidate-row">' +
+      '<div class="c-field"><label>姓名</label><input type="text" value="' + esc(c['姓名']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'姓名\',this.value)" style="width:70px;" ' + dis + '></div>' +
+      '<div class="c-field"><label>项目</label><input type="text" value="' + esc(c['项目']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'项目\',this.value)" style="width:90px;" placeholder="手动填写" ' + dis + '></div>' +
+      '<div class="c-field"><label>岗位</label><input type="text" value="' + esc(c['岗位']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'岗位\',this.value)" style="width:80px;" ' + dis + '></div>' +
+      '<div class="c-field"><label>公司</label><input type="text" value="' + esc(c['公司']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'公司\',this.value)" style="width:80px;" ' + dis + '></div>' +
+      '<div class="c-field"><label>渠道</label><select onchange="updateCand(\'' + userId + '\',' + c._id + ',\'渠道\',this.value)" ' + dis + '><option value="">-</option>' + CHANNELS.map(ch => '<option value="' + ch + '"' + (c['渠道']===ch?' selected':'') + '>' + ch + '</option>').join('') + '</select></div>' +
+      '<div class="c-field"><label>状态</label><select onchange="updateCand(\'' + userId + '\',' + c._id + ',\'状态\',this.value)" ' + dis + '>' + STATUSES.map(s => '<option value="' + s + '"' + (c['状态']===s?' selected':'') + '>' + s + '</option>').join('') + '</select></div>' +
+      '<div class="c-field"><label>日期</label><input type="date" value="' + (c['推荐日期']||'') + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'推荐日期\',this.value)" ' + dis + '></div>' +
+      '<div class="c-field"><label>简历链接</label><input type="url" value="' + esc(c['简历链接']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'简历链接\',this.value)" placeholder="URL" style="width:100px;" ' + dis + '></div>' +
+      '<div class="c-field" style="flex:1;"><label>Comments</label><input type="text" value="' + esc(c['Comments']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'Comments\',this.value)" placeholder="备注..." style="width:100%;" ' + dis + '></div>' +
+      (canEdit ? '<div class="c-actions"><button class="btn-danger" onclick="deleteCand(\'' + userId + '\',' + c._id + ')">🗑️</button></div>' : '') +
+      '</div></div>';
+  }).join('');
+}
+
+function addCandidate(userId) {
+  const data = getTrackData(userId);
+  const item = { _id: Date.now() };
+  CANDIDATE_FIELDS.forEach(f => { item[f] = ''; });
+  item['状态'] = '待触达';
+  item['推荐日期'] = new Date().toISOString().split('T')[0];
+  data.unshift(item);
+  saveTrackData(userId, data);
+  renderTrackSection(userId);
+}
+
+function deleteCand(userId, id) { if(!confirm('确定删除？'))return; saveTrackData(userId, getTrackData(userId).filter(c=>c._id!==id)); renderTrackSection(userId); }
+function updateCand(userId, id, field, value) { const d = getTrackData(userId); const item = d.find(c=>c._id===id); if(item){item[field]=value; saveTrackData(userId,d);} }
+
+function exportTrack(userId) {
+  const data = getTrackData(userId);
+  if (!data.length) { alert('暂无数据'); return; }
+  const user = getUserById(userId);
+  let csv = '\uFEFF' + CANDIDATE_FIELDS.join(',') + '\n';
+  data.forEach(item => { csv += CANDIDATE_FIELDS.map(f => '"' + (item[f]||'').replace(/"/g,'""') + '"').join(',') + '\n'; });
+  downloadCSV(csv, 'sourcing_' + user.name + '_' + new Date().toISOString().split('T')[0] + '.csv');
+}
+
+// ============================================
+// DASHBOARD
+// ============================================
+let chartDir = null, chartStat = null;
+function renderDashboard() {
+  const user = getCurrentUser();
+  if (!user) return;
+  let interns = user.role === 'leader' ? getInterns() : getInterns().filter(i => i.mentorId === user.id);
+  let totalC = 0, totalR = 0, totalI = 0, totalO = 0;
+  const projCounts = {}, statusCounts = {};
+  STATUSES.forEach(s => { statusCounts[s] = 0; });
+  const internStats = [];
+
+  interns.forEach(intern => {
+    const data = getTrackData(intern.id);
+    const t = data.length;
+    const r = data.filter(c => ['已推荐','面试中','已offer'].includes(c['状态'])).length;
+    const i = data.filter(c => c['状态'] === '面试中').length;
+    const o = data.filter(c => c['状态'] === '已offer').length;
+    totalC += t; totalR += r; totalI += i; totalO += o;
+    data.forEach(c => { if(c['项目']){projCounts[c['项目']]=(projCounts[c['项目']]||0)+1;} if(c['状态']){statusCounts[c['状态']]=(statusCounts[c['状态']]||0)+1;} });
+    const rv = getReviewData(intern.id); let rd = 0; for(let w=1;w<=24;w++){if(rv[w]&&rv[w].done&&rv[w].done.trim())rd++;}
+    internStats.push({ intern, t, r, i, o, rd });
+  });
+
+  document.getElementById('dash-stats').innerHTML =
+    '<div class="dash-stat"><div class="ds-num" style="color:var(--primary)">' + totalC + '</div><div class="ds-label">总候选人</div></div>' +
+    '<div class="dash-stat"><div class="ds-num" style="color:#F59E0B">' + totalR + '</div><div class="ds-label">已推荐+</div></div>' +
+    '<div class="dash-stat"><div class="ds-num" style="color:#10B981">' + totalI + '</div><div class="ds-label">面试中</div></div>' +
+    '<div class="dash-stat"><div class="ds-num" style="color:#EC4899">' + totalO + '</div><div class="ds-label">已offer</div></div>' +
+    '<div class="dash-stat"><div class="ds-num" style="color:var(--primary)">' + interns.length + '</div><div class="ds-label">实习生</div></div>';
+
+  if (typeof Chart !== 'undefined') {
+    const projLabels = Object.keys(projCounts);
+    const projData = projLabels.map(k => projCounts[k]);
+    const colors = ['rgba(99,102,241,0.7)','rgba(139,92,246,0.7)','rgba(236,72,153,0.7)','rgba(16,185,129,0.7)','rgba(245,158,11,0.7)','rgba(59,130,246,0.7)'];
+    const ctx1 = document.getElementById('chart-direction');
+    if (chartDir) chartDir.destroy();
+    chartDir = new Chart(ctx1, { type:'bar', data:{labels:projLabels,datasets:[{label:'候选人',data:projData,backgroundColor:colors,borderRadius:8}]}, options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}} });
+    const ctx2 = document.getElementById('chart-status');
+    if (chartStat) chartStat.destroy();
+    const sColors = ['#9CA3AF','#3B82F6','#F59E0B','#8B5CF6','#10B981','#EC4899','#EF4444','#6B7280'];
+    chartStat = new Chart(ctx2, { type:'doughnut', data:{labels:STATUSES,datasets:[{data:STATUSES.map(s=>statusCounts[s]),backgroundColor:sColors}]}, options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}} });
+  }
+
+  document.getElementById('dash-intern-cards').innerHTML = internStats.map(s =>
+    '<div class="candidate-card" style="margin-bottom:10px;"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+    '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--pink));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">' + s.intern.name[0] + '</div>' +
+    '<div style="flex:1;"><div style="font-weight:600;">' + s.intern.name + '</div><div style="font-size:11px;color:var(--text-light);">' + (s.intern.project||'') + '</div></div>' +
+    '<div style="display:flex;gap:12px;">' +
+    '<div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--primary);">' + s.t + '</div><div style="font-size:10px;color:var(--text-light);">候选人</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#10B981;">' + s.i + '</div><div style="font-size:10px;color:var(--text-light);">面试中</div></div>' +
+    '<div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#EC4899;">' + s.o + '</div><div style="font-size:10px;color:var(--text-light);">已offer</div></div>' +
+    '</div></div></div>'
+  ).join('');
+}
+
+function exportAllCSV() {
+  const interns = getCurrentUser().role === 'leader' ? getInterns() : getInterns().filter(i => i.mentorId === currentUserId);
+  let csv = '\uFEFF实习生,' + CANDIDATE_FIELDS.join(',') + '\n';
+  let has = false;
+  interns.forEach(intern => { getTrackData(intern.id).forEach(item => { has = true; csv += '"' + intern.name + '",' + CANDIDATE_FIELDS.map(f => '"' + (item[f]||'').replace(/"/g,'""') + '"').join(',') + '\n'; }); });
+  if (!has) { alert('暂无数据'); return; }
+  downloadCSV(csv, 'all_sourcing_' + new Date().toISOString().split('T')[0] + '.csv');
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+function genId() { return 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2,5); }
+function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function downloadCSV(csv, fn) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = fn; a.click(); }
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+function showNotice(msg) { const el = document.getElementById('save-notice'); if(msg) el.textContent = msg; el.style.display = 'block'; setTimeout(()=>{el.style.display='none';el.textContent='✅ 已保存';},2000); }
+function saveAllData() { const u = getCurrentUser(); if(u && u.role==='intern') saveReview(u.id); showNotice(); }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
