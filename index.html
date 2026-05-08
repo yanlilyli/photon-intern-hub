@@ -581,9 +581,11 @@ async function init() {
   const savedId = localStorage.getItem('phub_current_user');
   if (savedId && getUserById(savedId)) {
     currentUserId = savedId;
+    if (getCurrentUser().role === 'leader') adminVerified = true;
     renderApp();
   } else {
-    // Show login
+    // Clear stale session and show login
+    localStorage.removeItem('phub_current_user');
     showLoginModal();
   }
 }
