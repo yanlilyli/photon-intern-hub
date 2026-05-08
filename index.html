@@ -476,13 +476,13 @@ const CHANNELS = ['Boss直聘','猎聘','LinkedIn','脉脉','ArtStation','内部
 // ============================================
 const SUPABASE_URL = 'https://qubjivmscdvksioepzem.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1Ymppdm1zY2R2a3Npb2VwemVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNDYxOTQsImV4cCI6MjA5MzgyMjE5NH0.ZT8HdpRqlAnFl08Qn92Z-VpROHBqM9PF15D4pJ38KAY';
-let supabase = null;
+let db = null;
 let supabaseReady = false;
 
 // Initialize Supabase
 try {
   if (window.supabase && window.supabase.createClient) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     supabaseReady = true;
     console.log('[Supabase] Connected');
   }
@@ -496,7 +496,7 @@ function saveData(key, data) { localStorage.setItem('phub_' + key, JSON.stringif
 function getUsers() { return loadData('users', []); }
 function saveUsers(users) { saveData('users', users); }
 function getAdminCode() { return localStorage.getItem('phub_admin_code') || ''; }
-function setAdminCodeValue(code) { localStorage.setItem('phub_admin_code', code); if(supabaseReady) supabase.from('config').upsert({key:'admin_code',value:code}); }
+function setAdminCodeValue(code) { localStorage.setItem('phub_admin_code', code); if(supabaseReady) db.from('config').upsert({key:'admin_code',value:code}); }
 function getReviewData(userId) { return loadData('reviews_' + userId, {}); }
 function saveReviewData(userId, data) { saveData('reviews_' + userId, data); }
 function getTrackData(userId) { return loadData('track_' + userId, []); }
@@ -510,20 +510,20 @@ async function syncToCloud(key, data) {
   try {
     if (key === 'users') {
       // Sync users table
-      await supabase.from('users').delete().neq('id', '___');
+      await db.from('users').delete().neq('id', '___');
       const rows = data.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project||'', mentor_id: u.mentorId||'' }));
-      if (rows.length) await supabase.from('users').upsert(rows);
+      if (rows.length) await db.from('users').upsert(rows);
     } else if (key.startsWith('track_')) {
       const userId = key.replace('track_', '');
-      await supabase.from('candidates').delete().eq('user_id', userId);
+      await db.from('candidates').delete().eq('user_id', userId);
       const rows = data.map(c => ({ id: c._id, user_id: userId, name: c['姓名']||'', project: c['项目']||'', position: c['岗位']||'', company: c['公司']||'', channel: c['渠道']||'', status: c['状态']||'', recommend_date: c['推荐日期']||'', resume_link: c['简历链接']||'', comments: c['Comments']||'' }));
-      if (rows.length) await supabase.from('candidates').upsert(rows);
+      if (rows.length) await db.from('candidates').upsert(rows);
     } else if (key.startsWith('reviews_')) {
       const userId = key.replace('reviews_', '');
-      await supabase.from('reviews').upsert({ user_id: userId, review_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      await db.from('reviews').upsert({ user_id: userId, review_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
     } else if (key.startsWith('plan_')) {
       const userId = key.replace('plan_', '');
-      await supabase.from('plans').upsert({ user_id: userId, plan_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      await db.from('plans').upsert({ user_id: userId, plan_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
     }
   } catch(e) { console.warn('[Supabase] Sync error:', e); }
 }
@@ -533,24 +533,24 @@ async function pullFromCloud() {
   if (!supabaseReady) return;
   try {
     // Pull users
-    const { data: cloudUsers } = await supabase.from('users').select('*');
+    const { data: cloudUsers } = await db.from('users').select('*');
     if (cloudUsers && cloudUsers.length > 0 && getUsers().length === 0) {
       const users = cloudUsers.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project, mentorId: u.mentor_id }));
       localStorage.setItem('phub_users', JSON.stringify(users));
       // Pull each user's data
       for (const u of users) {
-        const { data: reviews } = await supabase.from('reviews').select('review_data').eq('user_id', u.id).single();
+        const { data: reviews } = await db.from('reviews').select('review_data').eq('user_id', u.id).single();
         if (reviews) localStorage.setItem('phub_reviews_' + u.id, JSON.stringify(reviews.review_data));
-        const { data: plan } = await supabase.from('plans').select('plan_data').eq('user_id', u.id).single();
+        const { data: plan } = await db.from('plans').select('plan_data').eq('user_id', u.id).single();
         if (plan) localStorage.setItem('phub_plan_' + u.id, JSON.stringify(plan.plan_data));
-        const { data: candidates } = await supabase.from('candidates').select('*').eq('user_id', u.id);
+        const { data: candidates } = await db.from('candidates').select('*').eq('user_id', u.id);
         if (candidates && candidates.length) {
           const track = candidates.map(c => ({ _id: c.id, '姓名': c.name, '项目': c.project, '岗位': c.position, '公司': c.company, '渠道': c.channel, '状态': c.status, '推荐日期': c.recommend_date, '简历链接': c.resume_link, 'Comments': c.comments }));
           localStorage.setItem('phub_track_' + u.id, JSON.stringify(track));
         }
       }
       // Pull admin code
-      const { data: cfg } = await supabase.from('config').select('value').eq('key', 'admin_code').single();
+      const { data: cfg } = await db.from('config').select('value').eq('key', 'admin_code').single();
       if (cfg) localStorage.setItem('phub_admin_code', cfg.value);
       console.log('[Supabase] Data pulled from cloud');
       return true; // indicate data was pulled
