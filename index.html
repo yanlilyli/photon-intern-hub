@@ -393,6 +393,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
       </div>
       <div id="user-list-container"></div>
     </div>
+    <div class="card">
+      <h2>📅 Review周次设置</h2>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">设置每周Review的时间周期，每行一个（格式如：5/11-5/15）</p>
+      <textarea id="weeks-editor" style="width:100%;min-height:150px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;line-height:1.8;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn-primary" onclick="saveWeeksFromEditor()">💾 保存周次</button>
+        <button class="btn-outline" onclick="resetWeeksToDefault()">🔄 重置默认</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -470,7 +479,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 // ============================================
 // CONSTANTS
 // ============================================
-const WEEKS = ['5/11-5/15','5/18-5/22','5/25-5/29','6/1-6/5','6/8-6/12','6/15-6/19','6/22-6/26','6/29-7/3','7/6-7/10','7/13-7/17','7/20-7/24','7/27-7/31','8/3-8/7','8/10-8/14','8/17-8/21','8/24-8/28','8/31-9/4','9/7-9/11','9/14-9/18','9/21-9/25','9/28-10/2','10/5-10/9','10/12-10/16','10/19-10/23'];
+const DEFAULT_WEEKS = ['5/11-5/15','5/18-5/22','5/25-5/29','6/1-6/5','6/8-6/12','6/15-6/19','6/22-6/26','6/29-7/3','7/6-7/10','7/13-7/17','7/20-7/24','7/27-7/31','8/3-8/7','8/10-8/14','8/17-8/21','8/24-8/28','8/31-9/4','9/7-9/11','9/14-9/18','9/21-9/25','9/28-10/2','10/5-10/9','10/12-10/16','10/19-10/23'];
+function getWeeks() { return loadData('weeks', DEFAULT_WEEKS); }
+function saveWeeks(weeks) { saveData('weeks', weeks); }
 const CANDIDATE_FIELDS = ['姓名','项目','岗位','公司','渠道','状态','推荐日期','简历链接','Comments'];
 const STATUSES = ['待触达','已触达','沟通中','已推荐','面试中','已offer','不合适','暂无意向'];
 const CHANNELS = ['Boss直聘','猎聘','LinkedIn','脉脉','ArtStation','内部简历库','校园渠道','其他'];
@@ -800,6 +811,24 @@ function renderSettingsTab() {
   // Admin code display
   const code = getAdminCode();
   document.getElementById('admin-code-display').textContent = code ? '••••••（已设置）' : '未设置';
+  // Init weeks editor
+  const weeksEditor = document.getElementById('weeks-editor');
+  if (weeksEditor) weeksEditor.value = getWeeks().join('\n');
+}
+
+function saveWeeksFromEditor() {
+  const text = document.getElementById('weeks-editor').value.trim();
+  const weeks = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  if (weeks.length < 1) { alert('至少需要1个周次'); return; }
+  saveWeeks(weeks);
+  showNotice('✅ 周次已保存（共' + weeks.length + '周）');
+}
+
+function resetWeeksToDefault() {
+  if (!confirm('重置为默认24周？')) return;
+  localStorage.removeItem('phub_weeks');
+  document.getElementById('weeks-editor').value = DEFAULT_WEEKS.join('\n');
+  showNotice('已重置为默认');
 }
 
 // ============================================
@@ -897,7 +926,7 @@ function renderInternsTab() {
   const summaryCard = document.getElementById('week-summary-card');
   if (user.role !== 'intern' && internsToShow.length > 0) {
     summaryCard.style.display = 'block';
-    document.getElementById('summary-week-select').innerHTML = WEEKS.map((w, i) => '<option value="' + (i+1) + '">W' + (i+1) + ' · ' + w + '</option>').join('');
+    document.getElementById('summary-week-select').innerHTML = getWeeks().map((w, i) => '<option value="' + (i+1) + '">W' + (i+1) + ' · ' + w + '</option>').join('');
     renderWeekSummary();
   } else { summaryCard.style.display = 'none'; }
 
@@ -913,7 +942,7 @@ function renderInternsTab() {
     const totalCandidates = trackData.length;
     const interviews = trackData.filter(c => ['面试中','已offer'].includes(c['状态'])).length;
     let reviewDone = 0;
-    for (let w = 1; w <= 24; w++) { if (reviewData[w] && reviewData[w].done && reviewData[w].done.trim()) reviewDone++; }
+    for (let w = 1; w <= getWeeks().length; w++) { if (reviewData[w] && reviewData[w].done && reviewData[w].done.trim()) reviewDone++; }
     const mentor = getUserById(intern.mentorId);
 
     container.innerHTML += '<div class="intern-card" id="intern-card-' + intern.id + '">' +
@@ -922,7 +951,7 @@ function renderInternsTab() {
       '<div class="intern-meta">' + (intern.project || '未设项目') + (mentor ? ' · Mentor: ' + mentor.name : '') + '</div></div></div>' +
       '<div class="quick-stats"><div class="quick-stat"><div class="qs-num">' + totalCandidates + '</div><div class="qs-label">候选人</div></div>' +
       '<div class="quick-stat"><div class="qs-num" style="color:var(--green)">' + interviews + '</div><div class="qs-label">面试+</div></div>' +
-      '<div class="quick-stat"><div class="qs-num" style="color:var(--pink)">' + reviewDone + '/24</div><div class="qs-label">周报</div></div></div>' +
+      '<div class="quick-stat"><div class="qs-num" style="color:var(--pink)">' + reviewDone + '/' + getWeeks().length + '</div><div class="qs-label">周报</div></div></div>' +
       '<span class="arrow">▶</span></div>' +
       '<div class="intern-card-body" id="intern-body-' + intern.id + '"></div></div>';
   });
@@ -1051,15 +1080,15 @@ function renderReviewSection(userId) {
   const data = getReviewData(userId);
   const canEdit = isOwnProfile(userId);
   let html = '<div class="week-pills">';
-  for (let w = 1; w <= 24; w++) {
+  for (let w = 1; w <= getWeeks().length; w++) {
     const hasDone = data[w] && data[w].done && data[w].done.trim();
     html += '<span class="week-pill ' + (w===1?'active':'') + '" onclick="selectReviewWeek(\'' + userId + '\',' + w + ',this)" style="' + (hasDone?'background:#D1FAE5;color:#065F46;border-color:#A7F3D0;':'') + '">W' + w + '</span>';
   }
   html += '</div>';
-  for (let w = 1; w <= 24; w++) {
+  for (let w = 1; w <= getWeeks().length; w++) {
     const s = data[w] || {};
     const dis = canEdit ? '' : 'disabled';
-    html += '<div id="rvw-' + userId + '-' + w + '" style="display:' + (w===1?'block':'none') + ';"><div class="card" style="margin-bottom:12px;"><h3 style="margin-top:0;">W' + w + ' · ' + WEEKS[w-1] + '</h3>' +
+    html += '<div id="rvw-' + userId + '-' + w + '" style="display:' + (w===1?'block':'none') + ';"><div class="card" style="margin-bottom:12px;"><h3 style="margin-top:0;">W' + w + ' · ' + getWeeks()[w-1] + '</h3>' +
       '<div class="review-field"><label>本周核心任务</label><textarea id="rv-' + userId + '-' + w + '-tasks" placeholder="本周要做什么..." ' + dis + '>' + (s.tasks||'') + '</textarea></div>' +
       '<div class="review-field"><label>完成情况</label><textarea id="rv-' + userId + '-' + w + '-done" placeholder="做了什么..." ' + dis + '>' + (s.done||'') + '</textarea></div>' +
       '<div class="review-field"><label>下周计划</label><textarea id="rv-' + userId + '-' + w + '-plan" placeholder="下周打算做什么..." ' + dis + '>' + (s.plan||'') + '</textarea></div>' +
@@ -1074,12 +1103,12 @@ function selectReviewWeek(userId, week, pill) {
   const c = document.getElementById('sub-review-' + userId);
   c.querySelectorAll('.week-pill').forEach(p => p.classList.remove('active'));
   pill.classList.add('active');
-  for (let w = 1; w <= 24; w++) { const el = document.getElementById('rvw-' + userId + '-' + w); if (el) el.style.display = w===week?'block':'none'; }
+  for (let w = 1; w <= getWeeks().length; w++) { const el = document.getElementById('rvw-' + userId + '-' + w); if (el) el.style.display = w===week?'block':'none'; }
 }
 
 function saveReview(userId) {
   const data = {};
-  for (let w = 1; w <= 24; w++) {
+  for (let w = 1; w <= getWeeks().length; w++) {
     const g = f => { const el = document.getElementById('rv-' + userId + '-' + w + '-' + f); return el ? el.value : ''; };
     data[w] = { tasks: g('tasks'), done: g('done'), plan: g('plan'), issues: g('issues') };
   }
@@ -1214,7 +1243,7 @@ function renderDashboard() {
     const o = data.filter(c => c['状态'] === '已offer').length;
     totalC += t; totalR += r; totalI += i; totalO += o;
     data.forEach(c => { if(c['项目']){projCounts[c['项目']]=(projCounts[c['项目']]||0)+1;} if(c['状态']){statusCounts[c['状态']]=(statusCounts[c['状态']]||0)+1;} });
-    const rv = getReviewData(intern.id); let rd = 0; for(let w=1;w<=24;w++){if(rv[w]&&rv[w].done&&rv[w].done.trim())rd++;}
+    const rv = getReviewData(intern.id); let rd = 0; for(let w=1;w<=getWeeks().length;w++){if(rv[w]&&rv[w].done&&rv[w].done.trim())rd++;}
     internStats.push({ intern, t, r, i, o, rd });
   });
 
