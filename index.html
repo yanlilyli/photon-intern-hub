@@ -942,7 +942,7 @@ function renderInternsTab() {
     const totalCandidates = trackData.length;
     const interviews = trackData.filter(c => ['面试中','已offer'].includes(c['状态'])).length;
     let reviewDone = 0;
-    for (let w = 1; w <= getWeeks().length; w++) { if (reviewData[w] && reviewData[w].done && reviewData[w].done.trim()) reviewDone++; }
+    for (let w = 1; w <= getInternWeeks(intern.id).length; w++) { if (reviewData[w] && reviewData[w].done && reviewData[w].done.trim()) reviewDone++; }
     const mentor = getUserById(intern.mentorId);
 
     container.innerHTML += '<div class="intern-card" id="intern-card-' + intern.id + '">' +
@@ -951,7 +951,7 @@ function renderInternsTab() {
       '<div class="intern-meta">' + (intern.project || '未设项目') + (mentor ? ' · Mentor: ' + mentor.name : '') + '</div></div></div>' +
       '<div class="quick-stats"><div class="quick-stat"><div class="qs-num">' + totalCandidates + '</div><div class="qs-label">候选人</div></div>' +
       '<div class="quick-stat"><div class="qs-num" style="color:var(--green)">' + interviews + '</div><div class="qs-label">面试+</div></div>' +
-      '<div class="quick-stat"><div class="qs-num" style="color:var(--pink)">' + reviewDone + '/' + getWeeks().length + '</div><div class="qs-label">周报</div></div></div>' +
+      '<div class="quick-stat"><div class="qs-num" style="color:var(--pink)">' + reviewDone + '/' + getInternWeeks(intern.id).length + '</div><div class="qs-label">周报</div></div></div>' +
       '<span class="arrow">▶</span></div>' +
       '<div class="intern-card-body" id="intern-body-' + intern.id + '"></div></div>';
   });
@@ -970,12 +970,15 @@ function renderInternBody(userId) {
     '<button class="sub-tab-btn active" onclick="switchSubTab(\'' + userId + '\',\'plan\',this)">📋 培养计划</button>' +
     '<button class="sub-tab-btn" onclick="switchSubTab(\'' + userId + '\',\'review\',this)">✍️ 每周Review</button>' +
     '<button class="sub-tab-btn" onclick="switchSubTab(\'' + userId + '\',\'track\',this)">📊 Sourcing Track</button>' +
+    '<button class="sub-tab-btn" onclick="switchSubTab(\'' + userId + '\',\'config\',this)">⚙️ 实习设置</button>' +
     '</div><div id="sub-plan-' + userId + '" class="sub-tab-content active"></div>' +
     '<div id="sub-review-' + userId + '" class="sub-tab-content"></div>' +
-    '<div id="sub-track-' + userId + '" class="sub-tab-content"></div>';
+    '<div id="sub-track-' + userId + '" class="sub-tab-content"></div>' +
+    '<div id="sub-config-' + userId + '" class="sub-tab-content"></div>';
   renderPlanSection(userId);
   renderReviewSection(userId);
   renderTrackSection(userId);
+  renderConfigSection(userId);
 }
 
 function switchSubTab(userId, tabName, btn) {
@@ -1079,16 +1082,17 @@ function renderReviewSection(userId) {
   const container = document.getElementById('sub-review-' + userId);
   const data = getReviewData(userId);
   const canEdit = isOwnProfile(userId);
+  const weeks = getInternWeeks(userId);
   let html = '<div class="week-pills">';
-  for (let w = 1; w <= getWeeks().length; w++) {
+  for (let w = 1; w <= weeks.length; w++) {
     const hasDone = data[w] && data[w].done && data[w].done.trim();
     html += '<span class="week-pill ' + (w===1?'active':'') + '" onclick="selectReviewWeek(\'' + userId + '\',' + w + ',this)" style="' + (hasDone?'background:#D1FAE5;color:#065F46;border-color:#A7F3D0;':'') + '">W' + w + '</span>';
   }
   html += '</div>';
-  for (let w = 1; w <= getWeeks().length; w++) {
+  for (let w = 1; w <= weeks.length; w++) {
     const s = data[w] || {};
     const dis = canEdit ? '' : 'disabled';
-    html += '<div id="rvw-' + userId + '-' + w + '" style="display:' + (w===1?'block':'none') + ';"><div class="card" style="margin-bottom:12px;"><h3 style="margin-top:0;">W' + w + ' · ' + getWeeks()[w-1] + '</h3>' +
+    html += '<div id="rvw-' + userId + '-' + w + '" style="display:' + (w===1?'block':'none') + ';"><div class="card" style="margin-bottom:12px;"><h3 style="margin-top:0;">W' + w + ' · ' + weeks[w-1] + '</h3>' +
       '<div class="review-field"><label>本周核心任务</label><textarea id="rv-' + userId + '-' + w + '-tasks" placeholder="本周要做什么..." ' + dis + '>' + (s.tasks||'') + '</textarea></div>' +
       '<div class="review-field"><label>完成情况</label><textarea id="rv-' + userId + '-' + w + '-done" placeholder="做了什么..." ' + dis + '>' + (s.done||'') + '</textarea></div>' +
       '<div class="review-field"><label>下周计划</label><textarea id="rv-' + userId + '-' + w + '-plan" placeholder="下周打算做什么..." ' + dis + '>' + (s.plan||'') + '</textarea></div>' +
@@ -1103,12 +1107,14 @@ function selectReviewWeek(userId, week, pill) {
   const c = document.getElementById('sub-review-' + userId);
   c.querySelectorAll('.week-pill').forEach(p => p.classList.remove('active'));
   pill.classList.add('active');
-  for (let w = 1; w <= getWeeks().length; w++) { const el = document.getElementById('rvw-' + userId + '-' + w); if (el) el.style.display = w===week?'block':'none'; }
+  const weeks = getInternWeeks(userId);
+  for (let w = 1; w <= weeks.length; w++) { const el = document.getElementById('rvw-' + userId + '-' + w); if (el) el.style.display = w===week?'block':'none'; }
 }
 
 function saveReview(userId) {
   const data = {};
-  for (let w = 1; w <= getWeeks().length; w++) {
+  const weeks = getInternWeeks(userId);
+  for (let w = 1; w <= weeks.length; w++) {
     const g = f => { const el = document.getElementById('rv-' + userId + '-' + w + '-' + f); return el ? el.value : ''; };
     data[w] = { tasks: g('tasks'), done: g('done'), plan: g('plan'), issues: g('issues') };
   }
@@ -1131,6 +1137,149 @@ function renderWeekSummary() {
       '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">' + (d.done || '<i>暂无填写</i>') + '</div></div>';
   });
   grid.innerHTML = html || '<p style="color:var(--text-light);font-size:13px;text-align:center;padding:20px;">暂无数据</p>';
+}
+
+// ============================================
+// INTERN CONFIG SECTION (实习设置 - Mentor & Intern可编辑)
+// ============================================
+function getInternConfig(userId) { return loadData('config_' + userId, { startDate: '', endDate: '', weeks: null, customFields: [] }); }
+function saveInternConfig(userId, cfg) { saveData('config_' + userId, cfg); }
+
+function getInternWeeks(userId) {
+  const cfg = getInternConfig(userId);
+  if (cfg.weeks && cfg.weeks.length > 0) return cfg.weeks;
+  return getWeeks(); // fallback to global
+}
+
+function getCustomFields(userId) {
+  const cfg = getInternConfig(userId);
+  return cfg.customFields || [];
+}
+
+function renderConfigSection(userId) {
+  const container = document.getElementById('sub-config-' + userId);
+  const canEdit = canEditData(userId);
+  const cfg = getInternConfig(userId);
+  const dis = canEdit ? '' : 'disabled';
+
+  let html = '<div class="card" style="margin-bottom:12px;">' +
+    '<h3 style="margin-top:0;">📅 实习周期</h3>' +
+    '<p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">设置实习起止日期，Review周次会据此调整</p>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">' +
+    '<div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;font-weight:600;color:var(--text-light);">开始日期</label><input type="date" id="cfg-start-' + userId + '" value="' + (cfg.startDate||'') + '" ' + dis + ' style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></div>' +
+    '<div style="display:flex;flex-direction:column;gap:4px;"><label style="font-size:11px;font-weight:600;color:var(--text-light);">结束日期</label><input type="date" id="cfg-end-' + userId + '" value="' + (cfg.endDate||'') + '" ' + dis + ' style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></div>' +
+    '</div>';
+
+  if (canEdit) {
+    html += '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
+      '<button class="btn-primary" onclick="saveInternDates(\'' + userId + '\')">💾 保存日期</button>' +
+      '<button class="btn-outline" onclick="autoGenWeeks(\'' + userId + '\')">🔄 根据日期自动生成周次</button>' +
+      '</div>';
+  }
+
+  // Custom weeks editor
+  const weeks = cfg.weeks || getWeeks();
+  html += '<h3>📋 Review周次（可手动编辑，每行一个）</h3>' +
+    '<textarea id="cfg-weeks-' + userId + '" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:monospace;line-height:1.6;" ' + dis + '>' + weeks.join('\n') + '</textarea>';
+
+  if (canEdit) {
+    html += '<div style="margin-top:8px;"><button class="btn-primary" onclick="saveInternWeeks(\'' + userId + '\')">💾 保存周次</button></div>';
+  }
+
+  html += '</div>';
+
+  // Custom fields for Sourcing Track
+  html += '<div class="card">' +
+    '<h3 style="margin-top:0;">📊 Sourcing Track 自定义字段</h3>' +
+    '<p style="font-size:12px;color:var(--text-light);margin-bottom:12px;">在默认字段基础上添加额外字段（所有人共享）</p>' +
+    '<div id="custom-fields-list-' + userId + '">';
+
+  const customFields = getCustomFields(userId);
+  customFields.forEach((f, i) => {
+    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">' +
+      '<input type="text" value="' + (f||'') + '" onchange="updateCustomField(\'' + userId + '\',' + i + ',this.value)" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;" ' + dis + '>' +
+      (canEdit ? '<button class="btn-danger" onclick="removeCustomField(\'' + userId + '\',' + i + ')">✕</button>' : '') +
+      '</div>';
+  });
+
+  html += '</div>';
+  if (canEdit) {
+    html += '<button class="btn-outline" onclick="addCustomField(\'' + userId + '\')" style="margin-top:8px;">+ 添加字段</button>';
+  }
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function saveInternDates(userId) {
+  const cfg = getInternConfig(userId);
+  cfg.startDate = document.getElementById('cfg-start-' + userId).value;
+  cfg.endDate = document.getElementById('cfg-end-' + userId).value;
+  saveInternConfig(userId, cfg);
+  showNotice('✅ 实习日期已保存');
+}
+
+function autoGenWeeks(userId) {
+  const start = document.getElementById('cfg-start-' + userId).value;
+  const end = document.getElementById('cfg-end-' + userId).value;
+  if (!start || !end) { alert('请先设置起止日期'); return; }
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (endDate <= startDate) { alert('结束日期需晚于开始日期'); return; }
+
+  // Generate weekly ranges (Mon-Fri)
+  const weeks = [];
+  let current = new Date(startDate);
+  // Align to Monday
+  const day = current.getDay();
+  if (day !== 1) current.setDate(current.getDate() + (day === 0 ? 1 : 8 - day));
+
+  while (current < endDate) {
+    const weekStart = new Date(current);
+    const weekEnd = new Date(current);
+    weekEnd.setDate(weekEnd.getDate() + 4); // Friday
+    weeks.push((weekStart.getMonth()+1) + '/' + weekStart.getDate() + '-' + (weekEnd.getMonth()+1) + '/' + weekEnd.getDate());
+    current.setDate(current.getDate() + 7);
+  }
+
+  const cfg = getInternConfig(userId);
+  cfg.weeks = weeks;
+  cfg.startDate = start;
+  cfg.endDate = end;
+  saveInternConfig(userId, cfg);
+  document.getElementById('cfg-weeks-' + userId).value = weeks.join('\n');
+  showNotice('✅ 已生成' + weeks.length + '周');
+}
+
+function saveInternWeeks(userId) {
+  const text = document.getElementById('cfg-weeks-' + userId).value.trim();
+  const weeks = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  if (weeks.length < 1) { alert('至少需要1周'); return; }
+  const cfg = getInternConfig(userId);
+  cfg.weeks = weeks;
+  saveInternConfig(userId, cfg);
+  showNotice('✅ 周次已保存（' + weeks.length + '周）');
+}
+
+function addCustomField(userId) {
+  const cfg = getInternConfig(userId);
+  cfg.customFields = cfg.customFields || [];
+  cfg.customFields.push('新字段');
+  saveInternConfig(userId, cfg);
+  renderConfigSection(userId);
+}
+
+function removeCustomField(userId, idx) {
+  const cfg = getInternConfig(userId);
+  cfg.customFields.splice(idx, 1);
+  saveInternConfig(userId, cfg);
+  renderConfigSection(userId);
+}
+
+function updateCustomField(userId, idx, value) {
+  const cfg = getInternConfig(userId);
+  cfg.customFields[idx] = value;
+  saveInternConfig(userId, cfg);
 }
 
 // ============================================
@@ -1183,8 +1332,9 @@ function rerenderCandidates(userId) {
   }
 
   const dis = canEdit ? '' : 'disabled';
+  const customFields = getCustomFields(userId);
   listEl.innerHTML = filtered.map(c => {
-    return '<div class="candidate-card"><div class="candidate-row">' +
+    let row = '<div class="candidate-card"><div class="candidate-row">' +
       '<div class="c-field"><label>姓名</label><input type="text" value="' + esc(c['姓名']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'姓名\',this.value)" style="width:70px;" ' + dis + '></div>' +
       '<div class="c-field"><label>项目</label><input type="text" value="' + esc(c['项目']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'项目\',this.value)" style="width:90px;" placeholder="手动填写" ' + dis + '></div>' +
       '<div class="c-field"><label>岗位</label><input type="text" value="' + esc(c['岗位']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'岗位\',this.value)" style="width:80px;" ' + dis + '></div>' +
@@ -1193,9 +1343,14 @@ function rerenderCandidates(userId) {
       '<div class="c-field"><label>状态</label><select onchange="updateCand(\'' + userId + '\',' + c._id + ',\'状态\',this.value)" ' + dis + '>' + STATUSES.map(s => '<option value="' + s + '"' + (c['状态']===s?' selected':'') + '>' + s + '</option>').join('') + '</select></div>' +
       '<div class="c-field"><label>日期</label><input type="date" value="' + (c['推荐日期']||'') + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'推荐日期\',this.value)" ' + dis + '></div>' +
       '<div class="c-field"><label>简历链接</label><input type="url" value="' + esc(c['简历链接']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'简历链接\',this.value)" placeholder="URL" style="width:100px;" ' + dis + '></div>' +
-      '<div class="c-field" style="flex:1;"><label>Comments</label><input type="text" value="' + esc(c['Comments']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'Comments\',this.value)" placeholder="备注..." style="width:100%;" ' + dis + '></div>' +
-      (canEdit ? '<div class="c-actions"><button class="btn-danger" onclick="deleteCand(\'' + userId + '\',' + c._id + ')">🗑️</button></div>' : '') +
+      '<div class="c-field" style="flex:1;"><label>Comments</label><input type="text" value="' + esc(c['Comments']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'Comments\',this.value)" placeholder="备注..." style="width:100%;" ' + dis + '></div>';
+    // Custom fields
+    customFields.forEach(f => {
+      row += '<div class="c-field"><label>' + esc(f) + '</label><input type="text" value="' + esc(c[f]||'') + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'' + f.replace(/'/g,"\\'") + '\',this.value)" style="width:80px;" ' + dis + '></div>';
+    });
+    row += (canEdit ? '<div class="c-actions"><button class="btn-danger" onclick="deleteCand(\'' + userId + '\',' + c._id + ')">🗑️</button></div>' : '') +
       '</div></div>';
+    return row;
   }).join('');
 }
 
@@ -1243,7 +1398,7 @@ function renderDashboard() {
     const o = data.filter(c => c['状态'] === '已offer').length;
     totalC += t; totalR += r; totalI += i; totalO += o;
     data.forEach(c => { if(c['项目']){projCounts[c['项目']]=(projCounts[c['项目']]||0)+1;} if(c['状态']){statusCounts[c['状态']]=(statusCounts[c['状态']]||0)+1;} });
-    const rv = getReviewData(intern.id); let rd = 0; for(let w=1;w<=getWeeks().length;w++){if(rv[w]&&rv[w].done&&rv[w].done.trim())rd++;}
+    const rv = getReviewData(intern.id); let rd = 0; for(let w=1;w<=getInternWeeks(intern.id).length;w++){if(rv[w]&&rv[w].done&&rv[w].done.trim())rd++;}
     internStats.push({ intern, t, r, i, o, rd });
   });
 
