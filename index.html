@@ -540,40 +540,35 @@ async function _doSync(key, data) {
   } catch(e) { console.warn('[Supabase] Sync error:', key, e); }
 }
 
-// Pull from cloud on first load (or when local data incomplete)
+// Pull from cloud on every load (cloud is source of truth)
 async function pullFromCloud() {
   if (!supabaseReady) return false;
   try {
     const { data: cloudUsers } = await db.from('users').select('*');
     if (!cloudUsers || cloudUsers.length === 0) return false;
     
-    // Always sync users list from cloud (cloud is source of truth for user list)
+    // Always sync users list from cloud
     const users = cloudUsers.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project, mentorId: u.mentor_id }));
     localStorage.setItem('phub_users', JSON.stringify(users));
     
-    // Pull candidates/reviews/plans for all users
+    // Always pull latest candidates/reviews/plans from cloud
     for (const u of users) {
-      // Only pull if local is empty for this user
-      if (!loadData('track_' + u.id, null)) {
-        const { data: candidates } = await db.from('candidates').select('*').eq('user_id', u.id);
-        if (candidates && candidates.length) {
-          const track = candidates.map(c => ({ _id: c.id, '姓名': c.name, '项目': c.project, '岗位': c.position, '公司': c.company, '渠道': c.channel, '状态': c.status, '推荐日期': c.recommend_date, '简历链接': c.resume_link, 'Comments': c.comments }));
-          localStorage.setItem('phub_track_' + u.id, JSON.stringify(track));
-        }
+      const { data: candidates } = await db.from('candidates').select('*').eq('user_id', u.id);
+      if (candidates && candidates.length) {
+        const track = candidates.map(c => ({ _id: c.id, '姓名': c.name, '项目': c.project, '岗位': c.position, '公司': c.company, '渠道': c.channel, '状态': c.status, '推荐日期': c.recommend_date, '简历链接': c.resume_link, 'Comments': c.comments }));
+        localStorage.setItem('phub_track_' + u.id, JSON.stringify(track));
+      } else {
+        localStorage.removeItem('phub_track_' + u.id);
       }
-      if (!loadData('reviews_' + u.id, null)) {
-        const { data: reviews } = await db.from('reviews').select('review_data').eq('user_id', u.id).maybeSingle();
-        if (reviews && reviews.review_data) localStorage.setItem('phub_reviews_' + u.id, JSON.stringify(reviews.review_data));
-      }
-      if (!loadData('plan_' + u.id, null)) {
-        const { data: plan } = await db.from('plans').select('plan_data').eq('user_id', u.id).maybeSingle();
-        if (plan && plan.plan_data) localStorage.setItem('phub_plan_' + u.id, JSON.stringify(plan.plan_data));
-      }
+      const { data: reviews } = await db.from('reviews').select('review_data').eq('user_id', u.id).maybeSingle();
+      if (reviews && reviews.review_data) localStorage.setItem('phub_reviews_' + u.id, JSON.stringify(reviews.review_data));
+      const { data: plan } = await db.from('plans').select('plan_data').eq('user_id', u.id).maybeSingle();
+      if (plan && plan.plan_data) localStorage.setItem('phub_plan_' + u.id, JSON.stringify(plan.plan_data));
     }
     // Pull admin code
     const { data: cfg } = await db.from('config').select('value').eq('key', 'admin_code').maybeSingle();
     if (cfg && cfg.value) localStorage.setItem('phub_admin_code', cfg.value);
-    console.log('[Supabase] Cloud data synced to local');
+    console.log('[Supabase] Cloud data pulled successfully');
     return true;
   } catch(e) { console.warn('[Supabase] Pull error:', e); }
   return false;
