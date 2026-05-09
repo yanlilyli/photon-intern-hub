@@ -504,57 +504,77 @@ function saveTrackData(userId, data) { saveData('track_' + userId, data); }
 function getPlanData(userId) { return loadData('plan_' + userId, null); }
 function savePlanData(userId, data) { saveData('plan_' + userId, data); }
 
-// Cloud sync (non-blocking background)
-async function syncToCloud(key, data) {
+// Cloud sync (non-blocking background with debounce)
+let _syncTimers = {};
+function syncToCloud(key, data) {
   if (!supabaseReady) return;
+  // Debounce: wait 2s after last change before syncing
+  clearTimeout(_syncTimers[key]);
+  _syncTimers[key] = setTimeout(() => _doSync(key, data), 2000);
+}
+
+async function _doSync(key, data) {
   try {
     if (key === 'users') {
-      // Sync users table
-      await db.from('users').delete().neq('id', '___');
+      await db.from('users').delete().neq('id', '___placeholder___');
       const rows = data.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project||'', mentor_id: u.mentorId||'' }));
       if (rows.length) await db.from('users').upsert(rows);
+      console.log('[Supabase] Users synced:', rows.length);
     } else if (key.startsWith('track_')) {
       const userId = key.replace('track_', '');
       await db.from('candidates').delete().eq('user_id', userId);
-      const rows = data.map(c => ({ id: c._id, user_id: userId, name: c['姓名']||'', project: c['项目']||'', position: c['岗位']||'', company: c['公司']||'', channel: c['渠道']||'', status: c['状态']||'', recommend_date: c['推荐日期']||'', resume_link: c['简历链接']||'', comments: c['Comments']||'' }));
-      if (rows.length) await db.from('candidates').upsert(rows);
+      if (data.length) {
+        const rows = data.map(c => ({ id: c._id, user_id: userId, name: c['姓名']||'', project: c['项目']||'', position: c['岗位']||'', company: c['公司']||'', channel: c['渠道']||'', status: c['状态']||'', recommend_date: c['推荐日期']||'', resume_link: c['简历链接']||'', comments: c['Comments']||'' }));
+        await db.from('candidates').upsert(rows);
+        console.log('[Supabase] Candidates synced:', rows.length);
+      }
     } else if (key.startsWith('reviews_')) {
       const userId = key.replace('reviews_', '');
       await db.from('reviews').upsert({ user_id: userId, review_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      console.log('[Supabase] Reviews synced for:', userId);
     } else if (key.startsWith('plan_')) {
       const userId = key.replace('plan_', '');
       await db.from('plans').upsert({ user_id: userId, plan_data: data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      console.log('[Supabase] Plan synced for:', userId);
     }
-  } catch(e) { console.warn('[Supabase] Sync error:', e); }
+  } catch(e) { console.warn('[Supabase] Sync error:', key, e); }
 }
 
-// Pull from cloud on first load (if localStorage empty)
+// Pull from cloud on first load (or when local data incomplete)
 async function pullFromCloud() {
-  if (!supabaseReady) return;
+  if (!supabaseReady) return false;
   try {
-    // Pull users
     const { data: cloudUsers } = await db.from('users').select('*');
-    if (cloudUsers && cloudUsers.length > 0 && getUsers().length === 0) {
-      const users = cloudUsers.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project, mentorId: u.mentor_id }));
-      localStorage.setItem('phub_users', JSON.stringify(users));
-      // Pull each user's data
-      for (const u of users) {
-        const { data: reviews } = await db.from('reviews').select('review_data').eq('user_id', u.id).single();
-        if (reviews) localStorage.setItem('phub_reviews_' + u.id, JSON.stringify(reviews.review_data));
-        const { data: plan } = await db.from('plans').select('plan_data').eq('user_id', u.id).single();
-        if (plan) localStorage.setItem('phub_plan_' + u.id, JSON.stringify(plan.plan_data));
+    if (!cloudUsers || cloudUsers.length === 0) return false;
+    
+    // Always sync users list from cloud (cloud is source of truth for user list)
+    const users = cloudUsers.map(u => ({ id: u.id, name: u.name, role: u.role, project: u.project, mentorId: u.mentor_id }));
+    localStorage.setItem('phub_users', JSON.stringify(users));
+    
+    // Pull candidates/reviews/plans for all users
+    for (const u of users) {
+      // Only pull if local is empty for this user
+      if (!loadData('track_' + u.id, null)) {
         const { data: candidates } = await db.from('candidates').select('*').eq('user_id', u.id);
         if (candidates && candidates.length) {
           const track = candidates.map(c => ({ _id: c.id, '姓名': c.name, '项目': c.project, '岗位': c.position, '公司': c.company, '渠道': c.channel, '状态': c.status, '推荐日期': c.recommend_date, '简历链接': c.resume_link, 'Comments': c.comments }));
           localStorage.setItem('phub_track_' + u.id, JSON.stringify(track));
         }
       }
-      // Pull admin code
-      const { data: cfg } = await db.from('config').select('value').eq('key', 'admin_code').single();
-      if (cfg) localStorage.setItem('phub_admin_code', cfg.value);
-      console.log('[Supabase] Data pulled from cloud');
-      return true; // indicate data was pulled
+      if (!loadData('reviews_' + u.id, null)) {
+        const { data: reviews } = await db.from('reviews').select('review_data').eq('user_id', u.id).maybeSingle();
+        if (reviews && reviews.review_data) localStorage.setItem('phub_reviews_' + u.id, JSON.stringify(reviews.review_data));
+      }
+      if (!loadData('plan_' + u.id, null)) {
+        const { data: plan } = await db.from('plans').select('plan_data').eq('user_id', u.id).maybeSingle();
+        if (plan && plan.plan_data) localStorage.setItem('phub_plan_' + u.id, JSON.stringify(plan.plan_data));
+      }
     }
+    // Pull admin code
+    const { data: cfg } = await db.from('config').select('value').eq('key', 'admin_code').maybeSingle();
+    if (cfg && cfg.value) localStorage.setItem('phub_admin_code', cfg.value);
+    console.log('[Supabase] Cloud data synced to local');
+    return true;
   } catch(e) { console.warn('[Supabase] Pull error:', e); }
   return false;
 }
