@@ -1520,24 +1520,24 @@ function importAllData(input) {
 
         function matchField(header) {
           const h = header.trim().toLowerCase();
+          // Only exact match (case insensitive, after trim)
           for (const [field, aliases] of Object.entries(fieldMap)) {
-            // Exact match (case insensitive)
             if (aliases.some(a => a.toLowerCase() === h)) return field;
-          }
-          // Fuzzy: if header contains any alias keyword
-          for (const [field, aliases] of Object.entries(fieldMap)) {
-            if (aliases.some(a => h.includes(a.toLowerCase()) || a.toLowerCase().includes(h))) return field;
           }
           return null;
         }
 
         const rawHeaders = Object.keys(rows[0]);
-        // Clean headers and build mapping
+        // Clean headers and build mapping (each target field can only be mapped once, first wins)
         const colMapping = {};
+        const usedFields = new Set();
         rawHeaders.forEach(h => {
           const cleaned = h.replace(/[\s\u00A0\uFEFF]/g, '').trim();
           const f = matchField(cleaned || h);
-          if (f) colMapping[h] = f;
+          if (f && !usedFields.has(f)) {
+            colMapping[h] = f;
+            usedFields.add(f);
+          }
         });
         console.log('[Import] Headers:', rawHeaders);
         console.log('[Import] Column mapping:', colMapping);
