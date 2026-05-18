@@ -1505,22 +1505,28 @@ function importAllData(input) {
         const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
         if (!rows.length) { alert('文件为空'); input.value = ''; return; }
 
-        // Map columns to our fields
+        // Map columns to our fields (fuzzy matching)
         const fieldMap = {
-          '姓名': ['姓名','候选人姓名','name','姓名/Name'],
-          '项目': ['项目','project','方向','direction'],
-          '岗位': ['岗位','职位','position','岗位名称'],
-          '公司': ['公司','company','当前公司','所在公司'],
-          '渠道': ['渠道','channel','来源','sourcing渠道'],
-          '状态': ['状态','status','当前状态'],
-          '推荐日期': ['推荐日期','日期','date','recommend_date'],
-          '简历链接': ['简历链接','简历','resume','resume_link','链接'],
-          'Comments': ['Comments','comments','备注','备注信息','remark']
+          '姓名': ['姓名','候选人姓名','name','姓名/name','候选人'],
+          '项目': ['项目','project','方向','direction','所属项目'],
+          '岗位': ['岗位','职位','position','岗位名称','推荐岗位','目标岗位'],
+          '公司': ['公司','company','当前公司','所在公司','目标公司'],
+          '渠道': ['渠道','channel','来源','sourcing渠道','招聘渠道'],
+          '状态': ['状态','status','当前状态','进度'],
+          '推荐日期': ['推荐日期','日期','date','recommend_date','时间'],
+          '简历链接': ['简历链接','简历','resume','resume_link','链接','简历地址','resume link'],
+          'Comments': ['comments','comment','备注','备注信息','remark','说明','评价']
         };
 
         function matchField(header) {
+          const h = header.trim().toLowerCase();
           for (const [field, aliases] of Object.entries(fieldMap)) {
-            if (aliases.some(a => a.toLowerCase() === header.toLowerCase())) return field;
+            // Exact match (case insensitive)
+            if (aliases.some(a => a.toLowerCase() === h)) return field;
+          }
+          // Fuzzy: if header contains any alias keyword
+          for (const [field, aliases] of Object.entries(fieldMap)) {
+            if (aliases.some(a => h.includes(a.toLowerCase()) || a.toLowerCase().includes(h))) return field;
           }
           return null;
         }
@@ -1528,6 +1534,7 @@ function importAllData(input) {
         const headers = Object.keys(rows[0]);
         const colMapping = {};
         headers.forEach(h => { const f = matchField(h); if (f) colMapping[h] = f; });
+        console.log('[Import] Column mapping:', colMapping);
 
         // Import candidates
         const userId = currentUserId;
