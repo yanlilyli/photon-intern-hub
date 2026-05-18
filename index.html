@@ -1531,9 +1531,15 @@ function importAllData(input) {
           return null;
         }
 
-        const headers = Object.keys(rows[0]);
+        const rawHeaders = Object.keys(rows[0]);
+        // Clean headers and build mapping
         const colMapping = {};
-        headers.forEach(h => { const f = matchField(h); if (f) colMapping[h] = f; });
+        rawHeaders.forEach(h => {
+          const cleaned = h.replace(/[\s\u00A0\uFEFF]/g, '').trim();
+          const f = matchField(cleaned || h);
+          if (f) colMapping[h] = f;
+        });
+        console.log('[Import] Headers:', rawHeaders);
         console.log('[Import] Column mapping:', colMapping);
 
         // Import candidates
@@ -1544,14 +1550,18 @@ function importAllData(input) {
           const item = { _id: Date.now() + idx + 1 };
           CANDIDATE_FIELDS.forEach(f => { item[f] = ''; });
           item['状态'] = '待触达';
-          // Map row data
-          headers.forEach(h => {
+          // Map row data using original header keys to access row values
+          rawHeaders.forEach(h => {
+            const val = row[h];
+            if (val === undefined || val === null || val === '') return;
             const targetField = colMapping[h];
-            if (targetField && row[h]) item[targetField] = String(row[h]);
-          });
-          // Also keep unmapped columns as custom fields
-          headers.forEach(h => {
-            if (!colMapping[h] && row[h]) item[h] = String(row[h]);
+            if (targetField) {
+              item[targetField] = String(val);
+            } else {
+              // Keep as custom field (use cleaned header name)
+              const cleanName = h.replace(/[\s\u00A0\uFEFF]/g, '').trim() || h;
+              item[cleanName] = String(val);
+            }
           });
           if (item['姓名'] || item['公司'] || item['岗位']) {
             existing.unshift(item);
