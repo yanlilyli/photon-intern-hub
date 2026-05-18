@@ -1533,8 +1533,8 @@ function importAllData(input) {
         const userId = currentUserId;
         const existing = getTrackData(userId);
         let imported = 0;
-        rows.forEach(row => {
-          const item = { _id: Date.now() + Math.random() * 1000 | 0 };
+        rows.forEach((row, idx) => {
+          const item = { _id: Date.now() + idx + 1 };
           CANDIDATE_FIELDS.forEach(f => { item[f] = ''; });
           item['状态'] = '待触达';
           // Map row data
@@ -1552,10 +1552,17 @@ function importAllData(input) {
           }
         });
 
-        saveTrackData(userId, existing);
+        // Save locally and force immediate sync (bypass debounce)
+        localStorage.setItem('phub_track_' + userId, JSON.stringify(existing));
         input.value = '';
-        showNotice('📥 成功导入 ' + imported + ' 条候选人，刷新中...');
-        setTimeout(() => location.reload(), 1000);
+        showNotice('📥 成功导入 ' + imported + ' 条候选人，同步中...');
+        // Force immediate sync then reload
+        _doSync('track_' + userId, existing).then(() => {
+          showNotice('✅ 导入完成，刷新页面...');
+          setTimeout(() => location.reload(), 500);
+        }).catch(() => {
+          setTimeout(() => location.reload(), 500);
+        });
       } catch(err) {
         console.error(err);
         alert('文件解析失败：' + err.message);
