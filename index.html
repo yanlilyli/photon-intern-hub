@@ -24,6 +24,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root {
   --primary: #6366F1;
@@ -407,7 +408,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
 <div class="save-bar" style="display:flex;gap:8px;">
   <button class="save-btn" onclick="exportAllData()" style="background:var(--green);font-size:12px;padding:10px 16px;">📤 导出备份</button>
-  <label class="save-btn" style="font-size:12px;padding:10px 16px;cursor:pointer;background:var(--accent);">📥 导入<input type="file" accept=".json" onchange="importAllData(this)" style="display:none;"></label>
+  <label class="save-btn" style="font-size:12px;padding:10px 16px;cursor:pointer;background:var(--accent);">📥 导入<input type="file" accept=".xlsx,.csv,.json" onchange="importAllData(this)" style="display:none;"></label>
   <button class="save-btn" onclick="saveAllData()">💾 保存</button>
 </div>
 <div class="save-notice" id="save-notice">✅ 已保存</div>
@@ -1476,27 +1477,96 @@ function exportAllData() {
 function importAllData(input) {
   const file = input.files[0];
   if (!file) return;
-  if (!confirm('导入将覆盖当前所有数据，确定继续？')) { input.value = ''; return; }
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      let count = 0;
-      Object.keys(data).forEach(key => {
-        if (key.startsWith('phub_')) {
-          localStorage.setItem(key, data[key]);
-          count++;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (ext === 'json') {
+    // Legacy JSON import
+    if (!confirm('导入JSON将覆盖当前所有数据，确定继续？')) { input.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        let count = 0;
+        Object.keys(data).forEach(key => { if (key.startsWith('phub_')) { localStorage.setItem(key, data[key]); count++; } });
+        input.value = '';
+        showNotice('📥 已导入 ' + count + ' 条数据，刷新中...');
+        setTimeout(() => location.reload(), 1000);
+      } catch(err) { alert('JSON格式错误'); input.value = ''; }
+    };
+    reader.readAsText(file);
+  } else if (ext === 'xlsx' || ext === 'csv') {
+    // Excel/CSV import → candidates
+    if (!confirm('将从文件中导入候选人数据到当前登录用户的Sourcing Track，确定继续？')) { input.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        if (!rows.length) { alert('文件为空'); input.value = ''; return; }
+
+        // Map columns to our fields
+        const fieldMap = {
+          '姓名': ['姓名','候选人姓名','name','姓名/Name'],
+          '项目': ['项目','project','方向','direction'],
+          '岗位': ['岗位','职位','position','岗位名称'],
+          '公司': ['公司','company','当前公司','所在公司'],
+          '渠道': ['渠道','channel','来源','sourcing渠道'],
+          '状态': ['状态','status','当前状态'],
+          '推荐日期': ['推荐日期','日期','date','recommend_date'],
+          '简历链接': ['简历链接','简历','resume','resume_link','链接'],
+          'Comments': ['Comments','comments','备注','备注信息','remark']
+        };
+
+        function matchField(header) {
+          for (const [field, aliases] of Object.entries(fieldMap)) {
+            if (aliases.some(a => a.toLowerCase() === header.toLowerCase())) return field;
+          }
+          return null;
         }
-      });
-      input.value = '';
-      showNotice('📥 已导入 ' + count + ' 条数据，刷新中...');
-      setTimeout(() => location.reload(), 1000);
-    } catch(err) {
-      alert('文件格式错误，请选择之前导出的JSON文件');
-      input.value = '';
-    }
-  };
-  reader.readAsText(file);
+
+        const headers = Object.keys(rows[0]);
+        const colMapping = {};
+        headers.forEach(h => { const f = matchField(h); if (f) colMapping[h] = f; });
+
+        // Import candidates
+        const userId = currentUserId;
+        const existing = getTrackData(userId);
+        let imported = 0;
+        rows.forEach(row => {
+          const item = { _id: Date.now() + Math.random() * 1000 | 0 };
+          CANDIDATE_FIELDS.forEach(f => { item[f] = ''; });
+          item['状态'] = '待触达';
+          // Map row data
+          headers.forEach(h => {
+            const targetField = colMapping[h];
+            if (targetField && row[h]) item[targetField] = String(row[h]);
+          });
+          // Also keep unmapped columns as custom fields
+          headers.forEach(h => {
+            if (!colMapping[h] && row[h]) item[h] = String(row[h]);
+          });
+          if (item['姓名'] || item['公司'] || item['岗位']) {
+            existing.unshift(item);
+            imported++;
+          }
+        });
+
+        saveTrackData(userId, existing);
+        input.value = '';
+        showNotice('📥 成功导入 ' + imported + ' 条候选人，刷新中...');
+        setTimeout(() => location.reload(), 1000);
+      } catch(err) {
+        console.error(err);
+        alert('文件解析失败：' + err.message);
+        input.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    alert('不支持的文件格式，请选择 .xlsx、.csv 或 .json 文件');
+    input.value = '';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
