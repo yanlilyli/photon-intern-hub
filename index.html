@@ -1303,7 +1303,11 @@ function renderTrackSection(userId) {
     '</div></div>';
 
   if (canEdit) {
-    html += '<div style="display:flex;gap:8px;margin-bottom:12px;"><button class="btn-primary" onclick="addCandidate(\'' + userId + '\')">+ 添加候选人</button><button class="btn-success" onclick="exportTrack(\'' + userId + '\')">📥 导出CSV</button></div>';
+    html += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
+      '<button class="btn-primary" onclick="addCandidate(\'' + userId + '\')">+ 添加候选人</button>' +
+      '<label class="btn-primary" style="cursor:pointer;background:var(--accent);">📤 导入Excel/CSV<input type="file" accept=".xlsx,.xls,.csv" onchange="importFileForUser(this,\'' + userId + '\')" style="display:none;"></label>' +
+      '<button class="btn-success" onclick="exportTrack(\'' + userId + '\')">📥 导出CSV</button>' +
+      '</div>';
   }
 
   html += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">' +
@@ -1591,6 +1595,84 @@ function importAllData(input) {
     alert('不支持的文件格式，请选择 .xlsx、.csv 或 .json 文件');
     input.value = '';
   }
+}
+
+// Import xlsx/csv directly into a specific user's track (used from Sourcing Track panel)
+function importFileForUser(input, userId) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls','csv'].includes(ext)) { alert('请选择 .xlsx 或 .csv 文件'); input.value=''; return; }
+  if (!confirm('将从文件中导入候选人数据，确定继续？')) { input.value=''; return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!rows.length) { alert('文件为空'); input.value=''; return; }
+
+      const fieldMap = {
+        '姓名': ['姓名','候选人姓名','name','候选人'],
+        '项目': ['项目','project','方向','direction','所属项目'],
+        '岗位': ['岗位','职位','position','岗位名称','推荐岗位','目标岗位'],
+        '公司': ['公司','company','当前公司','所在公司','目标公司'],
+        '渠道': ['渠道','channel','来源','sourcing渠道','招聘渠道'],
+        '状态': ['状态','status','当前状态','进度'],
+        '推荐日期': ['推荐日期','日期','date','recommend_date','时间'],
+        '简历链接': ['简历链接','简历','resume','resume_link','链接','简历地址'],
+        'Comments': ['comments','comment','备注信息','remark','说明','评价']
+      };
+
+      function matchF(header) {
+        const h = header.trim().toLowerCase();
+        for (const [field, aliases] of Object.entries(fieldMap)) {
+          if (aliases.some(a => a.toLowerCase() === h)) return field;
+        }
+        return null;
+      }
+
+      const rawHeaders = Object.keys(rows[0]);
+      const colMapping = {};
+      const usedFields = new Set();
+      rawHeaders.forEach(h => {
+        const cleaned = h.replace(/[\s\u00A0\uFEFF]/g,'').trim();
+        const f = matchF(cleaned || h);
+        if (f && !usedFields.has(f)) { colMapping[h] = f; usedFields.add(f); }
+      });
+      console.log('[Import] Headers:', rawHeaders, 'Mapping:', colMapping);
+
+      const existing = getTrackData(userId);
+      let imported = 0;
+      rows.forEach((row, idx) => {
+        const item = { _id: Date.now() + idx + 1 };
+        CANDIDATE_FIELDS.forEach(f => { item[f] = ''; });
+        item['状态'] = '待触达';
+        rawHeaders.forEach(h => {
+          const val = row[h];
+          if (val === undefined || val === null || val === '') return;
+          const targetField = colMapping[h];
+          if (targetField) { item[targetField] = String(val); }
+          else { item[h.replace(/[\s\u00A0\uFEFF]/g,'').trim() || h] = String(val); }
+        });
+        if (item['姓名'] || item['公司'] || item['岗位']) { existing.unshift(item); imported++; }
+      });
+
+      localStorage.setItem('phub_track_' + userId, JSON.stringify(existing));
+      input.value = '';
+      showNotice('📥 成功导入 ' + imported + ' 条候选人，同步中...');
+      _doSync('track_' + userId, existing).then(() => {
+        showNotice('✅ 导入完成！');
+        renderTrackSection(userId);
+      }).catch(() => { renderTrackSection(userId); });
+    } catch(err) {
+      console.error(err);
+      alert('文件解析失败：' + err.message);
+      input.value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 document.addEventListener('DOMContentLoaded', init);
