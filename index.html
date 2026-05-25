@@ -408,7 +408,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
 <div class="save-bar" style="display:flex;gap:8px;">
   <button class="save-btn" onclick="exportAllData()" style="background:var(--green);font-size:12px;padding:10px 16px;">📤 导出备份</button>
-  <label class="save-btn" style="font-size:12px;padding:10px 16px;cursor:pointer;background:var(--accent);">📥 导入<input type="file" accept=".xlsx,.csv,.json" onchange="importAllData(this)" style="display:none;"></label>
+  <button class="save-btn" style="font-size:12px;padding:10px 16px;background:var(--accent);" onclick="document.getElementById('global-import-file').click()">📥 导入</button>
+  <input type="file" id="global-import-file" accept=".xlsx,.xls,.csv,.json,.XLSX,.CSV,.JSON" onchange="importAllData(this)" style="display:none;">
   <button class="save-btn" onclick="saveAllData()">💾 保存</button>
 </div>
 <div class="save-notice" id="save-notice">✅ 已保存</div>
@@ -1305,7 +1306,8 @@ function renderTrackSection(userId) {
   if (canEdit) {
     html += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
       '<button class="btn-primary" onclick="addCandidate(\'' + userId + '\')">+ 添加候选人</button>' +
-      '<label class="btn-primary" style="cursor:pointer;background:var(--accent);">📤 导入Excel/CSV<input type="file" accept=".xlsx,.xls,.csv" onchange="importFileForUser(this,\'' + userId + '\')" style="display:none;"></label>' +
+      '<button class="btn-primary" style="background:var(--accent);" onclick="document.getElementById(\'import-file-' + userId + '\').click()">📤 导入Excel/CSV</button>' +
+      '<input type="file" id="import-file-' + userId + '" accept=".xlsx,.xls,.csv,.XLSX,.XLS,.CSV" onchange="importFileForUser(this,\'' + userId + '\')" style="display:none;">' +
       '<button class="btn-success" onclick="exportTrack(\'' + userId + '\')">📥 导出CSV</button>' +
       '</div>';
   }
