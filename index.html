@@ -1318,6 +1318,14 @@ function renderTrackSection(userId) {
     '<select id="tf-status-' + userId + '" onchange="rerenderCandidates(\'' + userId + '\')" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;"><option value="">全部状态</option>' + STATUSES.map(s => '<option value="' + s + '">' + s + '</option>').join('') + '</select>' +
     '<span id="tf-count-' + userId + '" style="font-size:12px;color:var(--text-light);margin-left:auto;"></span></div>';
 
+  if (canEdit) {
+    html += '<div id="batch-bar-' + userId + '" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">' +
+      '<label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="select-all-' + userId + '" onchange="toggleSelectAll(\'' + userId + '\',this.checked)"> 全选</label>' +
+      '<button class="btn-danger" onclick="batchDelete(\'' + userId + '\')" style="font-size:12px;padding:4px 12px;background:#FEE2E2;color:#DC2626;border:1px solid #FCA5A5;border-radius:6px;cursor:pointer;">🗑️ 批量删除</button>' +
+      '<span id="selected-count-' + userId + '" style="font-size:11px;color:var(--text-light);"></span>' +
+      '</div>';
+  }
+
   html += '<div id="candidates-list-' + userId + '"></div>';
   container.innerHTML = html;
   rerenderCandidates(userId);
@@ -1343,6 +1351,7 @@ function rerenderCandidates(userId) {
   const customFields = getCustomFields(userId);
   listEl.innerHTML = filtered.map(c => {
     let row = '<div class="candidate-card"><div class="candidate-row">' +
+      (canEdit ? '<div class="c-field" style="align-self:center;"><input type="checkbox" class="cand-check-' + userId + '" data-id="' + c._id + '" onchange="updateSelectedCount(\'' + userId + '\')"></div>' : '') +
       '<div class="c-field"><label>姓名</label><input type="text" value="' + esc(c['姓名']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'姓名\',this.value)" style="width:70px;" ' + dis + '></div>' +
       '<div class="c-field"><label>项目</label><input type="text" value="' + esc(c['项目']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'项目\',this.value)" style="width:90px;" placeholder="手动填写" ' + dis + '></div>' +
       '<div class="c-field"><label>岗位</label><input type="text" value="' + esc(c['岗位']) + '" onchange="updateCand(\'' + userId + '\',' + c._id + ',\'岗位\',this.value)" style="width:80px;" ' + dis + '></div>' +
@@ -1375,6 +1384,29 @@ function addCandidate(userId) {
 
 function deleteCand(userId, id) { if(!confirm('确定删除？'))return; saveTrackData(userId, getTrackData(userId).filter(c=>c._id!==id)); renderTrackSection(userId); }
 function updateCand(userId, id, field, value) { const d = getTrackData(userId); const item = d.find(c=>c._id===id); if(item){item[field]=value; saveTrackData(userId,d);} }
+
+function toggleSelectAll(userId, checked) {
+  document.querySelectorAll('.cand-check-' + userId).forEach(cb => { cb.checked = checked; });
+  updateSelectedCount(userId);
+}
+
+function updateSelectedCount(userId) {
+  const checked = document.querySelectorAll('.cand-check-' + userId + ':checked');
+  const el = document.getElementById('selected-count-' + userId);
+  if (el) el.textContent = checked.length > 0 ? '已选 ' + checked.length + ' 项' : '';
+}
+
+function batchDelete(userId) {
+  const checked = document.querySelectorAll('.cand-check-' + userId + ':checked');
+  if (checked.length === 0) { alert('请先勾选要删除的候选人'); return; }
+  if (!confirm('确定删除选中的 ' + checked.length + ' 条候选人？此操作不可撤销！')) return;
+  const idsToDelete = new Set();
+  checked.forEach(cb => { idsToDelete.add(Number(cb.getAttribute('data-id'))); });
+  const remaining = getTrackData(userId).filter(c => !idsToDelete.has(c._id));
+  saveTrackData(userId, remaining);
+  renderTrackSection(userId);
+  showNotice('🗑️ 已删除 ' + idsToDelete.size + ' 条');
+}
 
 function exportTrack(userId) {
   const data = getTrackData(userId);
