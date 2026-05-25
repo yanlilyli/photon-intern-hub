@@ -25,6 +25,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>if(typeof XLSX==='undefined'){document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/scr'+'ipt>');}</script>
 <style>
 :root {
   --primary: #6366F1;
@@ -1605,6 +1606,7 @@ function importFileForUser(input, userId) {
   if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['xlsx','xls','csv'].includes(ext)) { alert('请选择 .xlsx 或 .csv 文件'); input.value=''; return; }
+  if (typeof XLSX === 'undefined') { alert('Excel解析库未加载成功，请检查网络后刷新页面重试。\n\n如果持续出现此问题，请尝试：\n1. 用Chrome/Edge浏览器\n2. 确保能访问 cdn.jsdelivr.net\n3. 或改用CSV格式导入'); input.value=''; return; }
   if (!confirm('将从文件中导入候选人数据，确定继续？')) { input.value=''; return; }
 
   const reader = new FileReader();
